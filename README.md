@@ -1,4 +1,4 @@
-# odin-raylib-web-pong
+# [odin-raylib-web-pong](https://mr0x13f.github.io/odin-raylib-web-pong/)
 
 ## Requirements
 

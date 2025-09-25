@@ -1,12 +1,14 @@
 # [odin-raylib-web-pong](https://mr0x13f.github.io/odin-raylib-web-pong/)
 
-## Requirements
+Based on the [odin-raylib-web](https://github.com/karl-zylinski/odin-raylib-web) project template by Karl Zylinski.
 
+## Local setup
+
+### Requirements
 - **Emscripten**. Follow instructions here: https://emscripten.org/docs/getting_started/downloads.html (the stuff under "Installation instructions using the emsdk (recommended)").
 - **Recent Odin compiler**: This uses Raylib binding changes that were done on January 1, 2025.
 
-## Getting started
-
+### Building
 1. Point `EMSCRIPTEN_SDK_DIR` in `build_web.bat/sh` to where you installed emscripten.
 2. Run `build_web.bat/sh`.
 3. Web game is in the `build/web` folder.
@@ -23,5 +25,3 @@
 > _For those who don't have python: Emscripten comes with it. See the `python` folder in your emscripten installation directory._
 
 Build a desktop executable using `build_desktop.bat/sh`. It will end up in the `build/desktop` folder.
-
-Put any assets (textures, sounds etc) into the `assets` folder. Emscripten will merge those into the web build. For desktop builds, the `assets` folder is copied to the `build/desktop` folder.

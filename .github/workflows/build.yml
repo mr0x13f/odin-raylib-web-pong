@@ -17,11 +17,13 @@ jobs:
       - uses: mymindstorm/setup-emsdk@v14
       - uses: actions/checkout@v4
       - name: Set Script Permissions
-        run: chmod +x build_desktop.sh build_web.sh
-      - name: Build desktop
-        run: ./build_desktop.sh
+        run: chmod +x build.sh
+      - name: Build debug
+        run: ./build.sh debug
+      - name: Build release
+        run: ./build.sh release
       - name: Build web
-        run: ./build_web.sh
+        run: ./build.sh web
       - name: Upload web build artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -41,11 +43,13 @@ jobs:
       - uses: mymindstorm/setup-emsdk@v14
       - uses: actions/checkout@v4
       - name: Set Script Permissions
-        run: chmod +x build_desktop.sh build_web.sh
-      - name: Build desktop
-        run: ./build_desktop.sh
+        run: chmod +x build.sh
+      - name: Build debug
+        run: ./build.sh debug
+      - name: Build release
+        run: ./build.sh release
       - name: Build web
-        run: ./build_web.sh
+        run: ./build.sh web
 
   build_windows:
     name: Windows
@@ -58,10 +62,12 @@ jobs:
       - uses: mymindstorm/setup-emsdk@v14
       - uses: actions/checkout@v4
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: Build desktop
-        run: .\build_desktop.bat
+      - name: Build debug
+        run: ./build.bat debug
+      - name: Build release
+        run: ./build.bat release
       - name: Build web
-        run: .\build_web.bat
+        run: ./build.bat web
 
   deploy:
     name: Deploy GitHub Pages

@@ -4,16 +4,15 @@
         {
             "type": "cppvsdbg",
             "request": "launch",
-            "preLaunchTask": "Build",
+            "preLaunchTask": "Debug Build",
             "name": "Debug",
             "program": "${workspaceFolder}/build/debug/game_debug.exe",
             "args": [],
             "cwd": "${workspaceFolder}",
-            "console": "internalConsole",
+            "console": "integratedTerminal",
             "presentation": {
-                "group": "run",
-            },
-            "internalConsoleOptions": "openOnSessionStart"
+                "group": "shared"
+            }
         }
     ]
 }

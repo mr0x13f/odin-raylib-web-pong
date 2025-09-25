@@ -15,21 +15,19 @@ This project was meant to try out the feasability of making a graphical applicat
 - **Emscripten SDK**
     - https://emscripten.org/docs/getting_started/downloads.html#installation-instructions-using-the-emsdk-recommended
 
-### Building for web
+### Desktop builds
+- For debug builds run `build_web.bat/sh debug`
+- For release builds run `build_web.bat/sh web`
+
+### Web build
 1. Point `EMSCRIPTEN_SDK_DIR` in `build_web.bat/sh` to where you installed emscripten.
-2. Run `build_web.bat/sh`.
+2. Run `build.bat/sh web`.
 3. Web game is in the `build/web` folder.
 
 > [!NOTE]
-> `build_web.bat` is for windows, `build_web.sh` is for Linux / macOS.
+> `build.bat` is for windows, `build.sh` is for Linux / macOS.
 
 > [!WARNING]
 > You might not be able to run `build/web/index.html` directly due to "CORS policy" javascript errors. You can work around that by running a small server, i.e.:
 > - `npx http-server ./build/web -c-1`
 > - `python -m http.server --directory ./build/web`
-
-### Building for desktop
-1. Run `build_desktop.bat/sh`. It will end up in the `build/desktop` folder.
-
-> [!NOTE]
-> `build_desktop.bat` is for windows, `build_desktop.sh` is for Linux / macOS.

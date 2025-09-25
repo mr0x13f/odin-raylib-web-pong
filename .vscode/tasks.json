@@ -1,33 +1,41 @@
 {
     "version": "2.0.0",
-    "command": "",
-    "args": [],
     "tasks": [
         {
-            "label": "mkdir",
+            "label": "Debug Build",
             "type": "shell",
-            "command": "cmd",
-            "args": [
-                "/C",
-                "if not exist .\\build\\debug mkdir .\\build\\debug"
-            ],
-            "presentation": {
-                "close": true,
-            },
-            "hide": true,
-            "isBackground": true
-        },
-        {
-            "label": "Build",
-            "type": "shell",
-            "command": "odin build ./src/main_desktop -debug -vet -strict-style -out:build/debug/game_debug.exe",
-            "group": "build",
+            "windows": { "command": "./build.bat" },
+            "linux":   { "command": "./build.sh"  },
+            "osx":     { "command": "./build.sh"  },
+            "args": [ "debug" ],
             "presentation": {
                 "clear": true,
-            },
-            "dependsOn": [
-                "mkdir"
-            ]
+                "showReuseMessage": false
+            }
         },
+        {
+            "label": "Release Build",
+            "type": "shell",
+            "windows": { "command": "./build.bat" },
+            "linux":   { "command": "./build.sh"  },
+            "osx":     { "command": "./build.sh"  },
+            "args": [ "release" ],
+            "presentation": {
+                "clear": true,
+                "showReuseMessage": false
+            }
+        },
+        {
+            "label": "Web Build",
+            "type": "shell",
+            "windows": { "command": "./build.bat" },
+            "linux":   { "command": "./build.sh"  },
+            "osx":     { "command": "./build.sh"  },
+            "args": [ "web" ],
+            "presentation": {
+                "clear": true,
+                "showReuseMessage": false
+            }
+        }
     ]
 }

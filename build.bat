@@ -12,7 +12,7 @@
 : # On Linux/macOS/Git-Bash it will skip the Windows section.
 : # ------------------------------------------------------
 
-echo \" <<'BATCH' >/dev/null ">NUL "\" \`""
+: <<'BATCH'
 :: ------------------------------------------------------
 :: Windows Batch section, skipped under Bash
 :: ------------------------------------------------------

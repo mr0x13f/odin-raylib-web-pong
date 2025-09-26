@@ -1,7 +1,7 @@
 name: Build
 
 on:
-  push:
+  pubash:
   pull_request:
   workflow_dispatch:
 
@@ -19,11 +19,11 @@ jobs:
       - name: Set Script Permissions
         run: chmod +x build.bat
       - name: Build debug
-        run: sh build.bat debug
+        run: bash build.bat debug
       - name: Build release
-        run: sh build.bat release
+        run: bash build.bat release
       - name: Build web
-        run: sh build.bat web
+        run: bash build.bat web
       - name: Upload web build artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -45,11 +45,11 @@ jobs:
       - name: Set Script Permissions
         run: chmod +x build.bat
       - name: Build debug
-        run: sh build.bat debug
+        run: bash build.bat debug
       - name: Build release
-        run: sh build.bat release
+        run: bash build.bat release
       - name: Build web
-        run: sh build.bat web
+        run: bash build.bat web
 
   build_windows:
     name: Windows

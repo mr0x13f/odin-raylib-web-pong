@@ -5,7 +5,7 @@
 : # ------------------------------------------------------
 : # For web builds, set the EMSCRIPTEN_SDK_DIR variable further down
 : # ------------------------------------------------------
-: # On Linux/macOS, invoke as: $ sh build.bat
+: # On Linux/macOS, invoke as: $ bash build.bat
 : # ------------------------------------------------------
 : # This script is a polyglottal Batch/Shell script.
 : # Under Windows it will find Git-Bash and re-run itself under Bash.
@@ -25,7 +25,7 @@ set BASH=
 if defined BASH goto run
 for /f "delims=" %%i in ('where git.exe 2^>nul') do set "GIT_EXE=%%i"
 set "BASH=%GIT_EXE:\cmd\git.exe=\bin\bash.exe%"
-if not exist "%BASH%" echo [ERROR] No Bash path specified and could not find Git Bash. && exit /b 1
+if /I "%BASH%"=="%GIT_EXE%" || not exist "%BASH%" echo [ERROR] No Bash path specified and could not find Git Bash. && exit /b 1
 
 :: Run this same script with Bash
 :run
@@ -34,7 +34,7 @@ exit
 WINDOWS
 
 # ------------------------------------------------------
-# From now on, this script will run under sh/bash
+# From now on, this script will run under Bash
 # ------------------------------------------------------
 
 # Point this to where you installed the Emscripten SDK
@@ -45,9 +45,9 @@ EMSCRIPTEN_SDK_DIR=PATH/TO/YOUR/emsdk
 for arg in "$@"; do declare $arg='1'; done
 
 # Build mode
-if [ -n "${debug+x}"   ]; then build_mode=debug;   fi
-if [ -n "${release+x}" ]; then build_mode=release; fi
-if [ -n "${web+x}"     ]; then build_mode=web;     fi
+if [ -v debug   ]; then build_mode=debug;   fi
+if [ -v release ]; then build_mode=release; fi
+if [ -v web     ]; then build_mode=web;     fi
 
 mode_count=$(( ${debug:-0} + ${release:-0} + ${web:-0} ))
 if [[ $mode_count -eq 0 ]]; then { echo "[ERROR] No build mode specified"; exit 1; } fi
@@ -62,8 +62,7 @@ case "$(uname -s)" in
 esac
 
 # Prepare
-build_name="$(echo "$platform $build_mode" | awk '{printf toupper(substr($1,1,1)) substr($1,2) " " toupper(substr($2,1,1)) substr($2,2)}')"
-echo "[$build_name build]"
+echo "[${platform^} ${build_mode^} build]"
 out_dir="build/$build_mode"
 mkdir -p "$out_dir"
 
@@ -107,4 +106,4 @@ if [[ $build_mode == "release" ]]; then
     cp -r assets/* "$out_dir/assets/"
 fi
 
-echo "$build_name build created in $out_dir"
+echo "${platform^} ${build_mode^} build created in $out_dir"

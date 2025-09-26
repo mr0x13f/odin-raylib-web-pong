@@ -30,7 +30,7 @@ This project was meant to try out the feasability of making a graphical applicat
 3. Web game is in the `build/web` folder.
 
 > [!NOTE]
-> On Linux and macOS, `build.bat` must be invoked as `sh build.bat`.
+> On Linux and macOS, `build.bat` must be invoked as `bash build.bat`.
 
 > [!WARNING]
 > You might not be able to run `build/web/index.html` directly due to "CORS policy" javascript errors.

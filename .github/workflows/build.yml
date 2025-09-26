@@ -13,7 +13,6 @@ jobs:
       - uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          release: false
       - uses: mymindstorm/setup-emsdk@v14
       - uses: actions/checkout@v4
       - name: Set Script Permissions
@@ -31,15 +30,11 @@ jobs:
 
   build_macos:
     name: MacOS
-    strategy:
-      matrix:
-        os: [macos-13, macos-15]
-    runs-on: ${{matrix.os}}
+    runs-on: macos-latest
     steps:
       - uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          release: false
       - uses: mymindstorm/setup-emsdk@v14
       - uses: actions/checkout@v4
       - name: Set Script Permissions
@@ -58,7 +53,6 @@ jobs:
       - uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          release: false
       - uses: mymindstorm/setup-emsdk@v14
       - uses: actions/checkout@v4
       - uses: ilammy/msvc-dev-cmd@v1

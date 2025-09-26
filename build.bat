@@ -53,8 +53,8 @@ mode_count=$(( ${debug:-0} + ${release:-0} + ${web:-0} ))
 if [[ $mode_count -eq 0 ]]; then { echo "[ERROR] No build mode specified"; exit 1; } fi
 if [[ $mode_count -gt 1 ]]; then { echo "[ERROR] Too many build modes specified"; exit 1; } fi
 
-# Make sure we can find Emscripten SDK
-if [ "$build_mode" = "web" ] && [ ! -e "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" ] ); then
+# Make sure we can find Emscripten SDK for web builds
+if [ "$build_mode" = "web" ] && [ ! -e "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" ]; then
     echo "[ERROR] Can't find Emscripten SDK, make sure EMSCRIPTEN_SDK_DIR is set correctly"; exit 1
 fi
 

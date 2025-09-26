@@ -53,11 +53,6 @@ mode_count=$(( ${debug:-0} + ${release:-0} + ${web:-0} ))
 if [ $mode_count -eq 0 ]; then { echo "[ERROR] No build mode specified"; exit 1; } fi
 if [ $mode_count -gt 1 ]; then { echo "[ERROR] Too many build modes specified"; exit 1; } fi
 
-# Make sure we can find Emscripten SDK for web builds
-# if [ "$build_mode" = "web" ] && [ ! -e "emcc" ] && [ ! -e "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" ]; then
-#     echo "[ERROR] Can't find Emscripten SDK, make sure EMSCRIPTEN_SDK_DIR is set correctly"; exit 1
-# fi
-
 # Platform
 case "$(uname -s)" in
     Linux)                platform="linux";   exe_ext="" ;;
@@ -99,8 +94,8 @@ odin build "$odin_main" ${odin_flags[@]} -out="$odin_out" || exit 1
 if [ $build_mode == "web" ]; then
     echo "Compiling WASM..."
     export EMSDK_QUIET=1
-    source "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh"
-    cmd "$EMSCRIPTEN_SDK_DIR/emsdk_env.bat"
+    source "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" > /dev/null 2>&1 &
+    cmd "$EMSCRIPTEN_SDK_DIR/emsdk_env.bat"   > /dev/null 2>&1 &
 
     ODIN_PATH=$(odin root)
     html_template="$odin_main/index_template.html"
@@ -109,7 +104,7 @@ if [ $build_mode == "web" ]; then
     emcc_flags=(-sUSE_GLFW=3 -sWASM_BIGINT -sWARN_ON_UNDEFINED_SYMBOLS=0 -sASSERTIONS --shell-file "$html_template" --preload-file assets)
 
     cp "$ODIN_PATH/core/sys/wasm/js/odin.js" "$out_dir/"
-    emcc -o "$emcc_out" "${emcc_files[@]}" "${emcc_flags[@]}" || exit 1
+    emcc -o "$emcc_out" "${emcc_files[@]}" "${emcc_flags[@]}" || echo "emcc failed, did you set EMSCRIPTEN_SDK_DIR correctly?"; exit 1
 
     rm -f "$odin_out"
 fi

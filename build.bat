@@ -50,13 +50,13 @@ if [ -n "${release+x}" ]; then build_mode=release; fi
 if [ -n "${web+x}"     ]; then build_mode=web;     fi
 
 mode_count=$(( ${debug:-0} + ${release:-0} + ${web:-0} ))
-if [[ $mode_count -eq 0 ]]; then { echo "[ERROR] No build mode specified"; exit 1; } fi
-if [[ $mode_count -gt 1 ]]; then { echo "[ERROR] Too many build modes specified"; exit 1; } fi
+if [ $mode_count -eq 0 ]; then { echo "[ERROR] No build mode specified"; exit 1; } fi
+if [ $mode_count -gt 1 ]; then { echo "[ERROR] Too many build modes specified"; exit 1; } fi
 
 # Make sure we can find Emscripten SDK for web builds
-if [ "$build_mode" = "web" ] && [ ! -e "emcc" ] && [ ! -e "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" ]; then
-    echo "[ERROR] Can't find Emscripten SDK, make sure EMSCRIPTEN_SDK_DIR is set correctly"; exit 1
-fi
+# if [ "$build_mode" = "web" ] && [ ! -e "emcc" ] && [ ! -e "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" ]; then
+#     echo "[ERROR] Can't find Emscripten SDK, make sure EMSCRIPTEN_SDK_DIR is set correctly"; exit 1
+# fi
 
 # Platform
 case "$(uname -s)" in
@@ -96,7 +96,7 @@ echo Compiling Odin
 odin build "$odin_main" ${odin_flags[@]} -out="$odin_out" || exit 1
 
 # Emscripten
-if [[ $build_mode == "web" ]]; then
+if [ $build_mode == "web" ]; then
     echo "Compiling WASM..."
     export EMSDK_QUIET=1
     source "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh"
@@ -115,7 +115,7 @@ if [[ $build_mode == "web" ]]; then
 fi
 
 # Copy assets for release build
-if [[ $build_mode == "release" ]]; then
+if [ $build_mode == "release" ]; then
     echo "Copying assets..."
     mkdir -p "$out_dir/assets"
     cp -r assets/* "$out_dir/assets/"

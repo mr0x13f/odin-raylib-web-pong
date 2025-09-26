@@ -74,12 +74,13 @@ if [ $build_mode = "debug" ]; then
     odin_main=src/main_desktop
     odin_out=$out_dir/game_${platform}_${build_mode}${exe_ext}
     odin_flags="$odin_flags -o:minimal -debug"
-    if [ $platform = "windows" ]; then odin_flags="$odin_flags -linker:radlink"; fi
+    if [ $platform = "windows" ]; then odin_flags="$odin_flags -linker:radlink -subsystem:console"; fi
 
 elif [ $build_mode = "release" ]; then
     odin_main=src/main_desktop
     odin_out=$out_dir/game_${platform}${exe_ext}
     odin_flags="$odin_flags -o:speed -disable-assert"
+    if [ $platform = "windows" ]; then odin_flags="$odin_flags -subsystem:windows"; fi
 
 elif [ $build_mode = "web" ]; then
     odin_main=src/main_web

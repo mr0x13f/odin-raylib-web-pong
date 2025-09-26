@@ -408,9 +408,7 @@ shapecast :: proc(shape: ^Entity, movement: vec2, variant_filter: bit_set[Entity
     // Find first colliding entity
     for &entity in pong_state.entities {
         if entity == nil || &entity.? == shape { continue }
-
-        variant := transmute(Entity_Variant_Name)reflect.get_union_variant_raw_tag(entity.?.variant)
-        if variant not_in variant_filter { continue }
+        if variant_of(&entity.?) not_in variant_filter { continue }
 
         new_hit := swept_aabb_collision(entity.?.box, shape.box, movement)
 
@@ -640,6 +638,16 @@ pong_serve :: proc(direction: vec2) {
             velocity = serve_direction * BALL_START_SPEED,
         },
     })
+}
+
+variant_of :: proc(entity: ^Entity) -> Entity_Variant_Name {
+    when size_of(Entity_Variant_Name) == 4 {
+        tag := u32(reflect.get_union_variant_raw_tag(entity.variant))
+    }
+    when size_of(Entity_Variant_Name) == 8 {
+        tag := u64(reflect.get_union_variant_raw_tag(entity.variant))
+    }
+    return transmute(Entity_Variant_Name)tag
 }
 
 destroy_entity :: proc(entity: ^Entity) {

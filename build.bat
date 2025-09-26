@@ -87,7 +87,7 @@ elif [ $build_mode = "web" ]; then
     odin_flags="$odin_flags -o:speed -disable-assert -target:js_wasm32 -build-mode:obj -define:RAYLIB_WASM_LIB=env.o -define:RAYGUI_WASM_LIB=env.o"
 fi
 
-echo Compiling Odin
+echo Compiling Odin...
 odin build "$odin_main" ${odin_flags[@]} -out="$odin_out" || exit 1
 
 # Emscripten
@@ -104,7 +104,8 @@ if [ $build_mode == "web" ]; then
     emcc_flags=(-sUSE_GLFW=3 -sWASM_BIGINT -sWARN_ON_UNDEFINED_SYMBOLS=0 -sASSERTIONS --shell-file "$html_template" --preload-file assets)
 
     cp "$ODIN_PATH/core/sys/wasm/js/odin.js" "$out_dir/"
-    emcc -o "$emcc_out" "${emcc_files[@]}" "${emcc_flags[@]}" || echo "emcc failed, did you set EMSCRIPTEN_SDK_DIR correctly?"; exit 1
+    emcc -o "$emcc_out" "${emcc_files[@]}" "${emcc_flags[@]}" ||
+        { echo "emcc failed, did you set EMSCRIPTEN_SDK_DIR correctly?"; exit 1; }
 
     rm -f "$odin_out"
 fi

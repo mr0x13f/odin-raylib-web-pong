@@ -54,9 +54,8 @@ if [[ $mode_count -eq 0 ]]; then { echo "[ERROR] No build mode specified"; exit 
 if [[ $mode_count -gt 1 ]]; then { echo "[ERROR] Too many build modes specified"; exit 1; } fi
 
 # Make sure we can find Emscripten SDK
-if [ "$build_mode" = "web" ] && ( [ ! -e "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" ] || [ ! -e "$EMSCRIPTEN_SDK_DIR/emcc" ] ); then
-    echo "[ERROR] Can't find Emscripten SDK, make sure EMSCRIPTEN_SDK_DIR is set correctly"
-    exit 1
+if [ "$build_mode" = "web" ] && [ ! -e "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" ] ); then
+    echo "[ERROR] Can't find Emscripten SDK, make sure EMSCRIPTEN_SDK_DIR is set correctly"; exit 1
 fi
 
 # Platform
@@ -74,17 +73,24 @@ out_dir="build/$build_mode"
 mkdir -p "$out_dir"
 
 # Odin compile
-odin_main=src/main_desktop
-if [ $build_mode = "web" ]; then odin_main=src/main_web; fi
-
-odin_out=$out_dir/game_$build_mode$exe_ext
-if [ $build_mode = "web" ]; then odin_out=$out_dir/game.wasm.o; fi
-
 odin_flags="-vet -strict-style"
-if [ $build_mode = "debug"   ]; then odin_flags="$odin_flags -o:minimal -debug"; fi
-if [ $build_mode = "debug" ] && [ $platform = "windows" ]; then odin_flags="$odin_flags -linker:radlink"; fi
-if [ $build_mode = "release" ]; then odin_flags="$odin_flags -o:speed -disable-assert"; fi
-if [ $build_mode = "web"     ]; then odin_flags="$odin_flags -o:speed -disable-assert -target:js_wasm32 -build-mode:obj -define:RAYLIB_WASM_LIB=env.o -define:RAYGUI_WASM_LIB=env.o"; fi
+
+if [ $build_mode = "debug" ]; then
+    odin_main=src/main_desktop
+    odin_out=$out_dir/game_${platform}_${build_mode}${exe_ext}
+    odin_flags="$odin_flags -o:minimal -debug"
+    if [ $platform = "windows" ]; then odin_flags="$odin_flags -linker:radlink"; fi
+
+elif [ $build_mode = "release" ]; then
+    odin_main=src/main_desktop
+    odin_out=$out_dir/game_${platform}${exe_ext}
+    odin_flags="$odin_flags -o:speed -disable-assert"
+
+elif [ $build_mode = "web" ]; then
+    odin_main=src/main_web
+    odin_out=$out_dir/game.wasm.o
+    odin_flags="$odin_flags -o:speed -disable-assert -target:js_wasm32 -build-mode:obj -define:RAYLIB_WASM_LIB=env.o -define:RAYGUI_WASM_LIB=env.o"
+fi
 
 echo Compiling Odin
 odin build "$odin_main" ${odin_flags[@]} -out="$odin_out" || exit 1
@@ -93,7 +99,7 @@ odin build "$odin_main" ${odin_flags[@]} -out="$odin_out" || exit 1
 if [[ $build_mode == "web" ]]; then
     echo "Compiling WASM..."
     export EMSDK_QUIET=1
-    source "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh"
+    source "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" || exit 1
 
     ODIN_PATH=$(odin root)
     html_template="$odin_main/index_template.html"

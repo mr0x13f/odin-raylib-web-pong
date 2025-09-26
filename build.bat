@@ -1,70 +1,110 @@
-@echo off
-setlocal enabledelayedexpansion
+: # ---------- USAGE -------------------------------------
+: # build.bat debug
+: # build.bat release
+: # build.bat web
+: # ------------------------------------------------------
+: # For web builds, set the EMSCRIPTEN_SDK_DIR variable further down
+: # ------------------------------------------------------
+: # On Linux/macOS, invoke as: $ sh build.bat
+: # ------------------------------------------------------
+: # This script is a polyglottal Batch/Shell script.
+: # Under Windows it will find Git-Bash and re-run itself under Bash.
+: # On Linux/macOS/Git-Bash it will skip the Windows section.
+: # ------------------------------------------------------
 
-:: ---------- USAGE ----------
-:: build.bat debug
-:: build.bat release
-:: build.bat web
-:: ---------------------------
+echo \" <<'WINDOWS' >/dev/null ">NUL "\" \`""
+:: ------------------------------------------------------
+:: Windows section, skipped under Bash
+:: ------------------------------------------------------
+@ECHO OFF
 
-:: Point this to where you installed the Emscripten SDK
-set EMSCRIPTEN_SDK_DIR=C:\PATH\TO\YOUR\emsdk
+:: Put your preferred bash here
+set BASH=
 
-:: Unpack Arguments
-for %%a in (%*) do set "%%~a=1"
+:: Try finding Git Bash
+if defined BASH goto run
+for /f "delims=" %%i in ('where git.exe 2^>nul') do set "GIT_EXE=%%i"
+set "BASH=%GIT_EXE:\cmd\git.exe=\bin\bash.exe%"
+if not exist "%BASH%" echo [ERROR] No Bash path specified and could not find Git Bash. && exit /b 1
 
-:: Build mode
-if "%debug%"=="1"   set "build_mode=debug"   && set "build_name=Debug"  
-if "%release%"=="1" set "build_mode=release" && set "build_name=Release"
-if "%web%"=="1"     set "build_mode=web"     && set "build_name=Web"    
+:: Run this same script with Bash
+:run
+"%BASH%" "%~f0" %*
+exit
+WINDOWS
 
-set /a mode_count=debug + release + web
-if %mode_count%==0    echo [ERROR] No build mode specified && exit /b 1
-if %mode_count% gtr 1 echo [ERROR] Too many build modes specified && exit /b 1
+# ------------------------------------------------------
+# From now on, this script will run under sh/bash
+# ------------------------------------------------------
 
-echo [%build_name% build]
-set "out_dir=build\%build_mode%"
-if not exist "%out_dir%" mkdir "%out_dir%"
+# Point this to where you installed the Emscripten SDK
+# EMSCRIPTEN_SDK_DIR="/path/to/your/emsdk"
+EMSCRIPTEN_SDK_DIR=PATH/TO/YOUR/emsdk
 
-:: Odin compile
-set "odin_main=src\main_desktop"
-if "%build_mode%"=="web" set "odin_main=src\main_web"
+# Unpack Arguments
+for arg in "$@"; do declare $arg='1'; done
 
-set "odin_out=%out_dir%\game_%build_mode%.exe"
-if "%build_mode%"=="web" set "odin_out=%out_dir%\game.wasm.o"
+# Build mode
+if [ -n "${debug+x}"   ]; then build_mode=debug;   fi
+if [ -n "${release+x}" ]; then build_mode=release; fi
+if [ -n "${web+x}"     ]; then build_mode=web;     fi
 
-set "odin_flags=-vet -strict-style"
-if "%build_mode%"=="debug"   set "odin_flags=%odin_flags% -o:minimal -debug -linker:radlink"
-if "%build_mode%"=="release" set "odin_flags=%odin_flags% -o:speed -disable-assert"
-if "%build_mode%"=="web"     set "odin_flags=%odin_flags% -o:speed -disable-assert -target:js_wasm32 -build-mode:obj -define:RAYLIB_WASM_LIB=env.o -define:RAYGUI_WASM_LIB=env.o"
+mode_count=$(( ${debug:-0} + ${release:-0} + ${web:-0} ))
+if [[ $mode_count -eq 0 ]]; then { echo "[ERROR] No build mode specified"; exit 1; } fi
+if [[ $mode_count -gt 1 ]]; then { echo "[ERROR] Too many build modes specified"; exit 1; } fi
+
+# Platform
+case "$(uname -s)" in
+    Linux)                platform="linux";   exe_ext="" ;;
+    Darwin)               platform="macos";   exe_ext="" ;;
+    MINGW*|MSYS*|CYGWIN*) platform="windows"; exe_ext=".exe" ;;
+    *) platform="UNKNOWN PLATFORM"; exe_ext="" ;;
+esac
+
+# Prepare
+build_name="$(echo "$platform $build_mode" | awk '{printf toupper(substr($1,1,1)) substr($1,2) " " toupper(substr($2,1,1)) substr($2,2)}')"
+echo "[$build_name build]"
+out_dir="build/$build_mode"
+mkdir -p "$out_dir"
+
+# Odin compile
+odin_main=src/main_desktop
+if [ $build_mode = "web" ]; then odin_main=src/main_web; fi
+
+odin_out=$out_dir/game_$build_mode$exe_ext
+if [ $build_mode = "web" ]; then odin_out=$out_dir/game.wasm.o; fi
+
+odin_flags="-vet -strict-style"
+if [ $build_mode = "debug"   ]; then odin_flags="$odin_flags -o:minimal -debug -linker:radlink"; fi
+if [ $build_mode = "release" ]; then odin_flags="$odin_flags -o:speed -disable-assert"; fi
+if [ $build_mode = "web"     ]; then odin_flags="$odin_flags -o:speed -disable-assert -target:js_wasm32 -build-mode:obj -define:RAYLIB_WASM_LIB=env.o -define:RAYGUI_WASM_LIB=env.o"; fi
 
 echo Compiling Odin...
-odin build %odin_main% -out:%odin_out% %odin_flags%
-if %ERRORLEVEL% NEQ 0 exit /b 1
+odin build $odin_main -out="$odin_out"
 
-:: Emscripten
-if "%build_mode%"=="web" (
-    echo Compiling WASM...
-    set "EMSDK_QUIET=1"
-    call "!EMSCRIPTEN_SDK_DIR!\emsdk_env.bat"
+# Emscripten
+if [[ $build_mode == "web" ]]; then
+    echo "Compiling WASM..."
+    export EMSDK_QUIET=1
+    source "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh"
 
-    for /f "delims=" %%i in ('odin root') do set "ODIN_PATH=%%i"
-    set "html_template=!odin_main!\index_template.html"
-    set "emcc_out=!out_dir!\index.html"
-    set emcc_files="%odin_out%" "!ODIN_PATH!\vendor\raylib\wasm\libraylib.a" "!ODIN_PATH!\vendor\raylib\wasm\libraygui.a"
-    set emcc_flags=-sUSE_GLFW=3 -sWASM_BIGINT -sWARN_ON_UNDEFINED_SYMBOLS=0 -sASSERTIONS --shell-file "!html_template!" --preload-file assets
+    ODIN_PATH=$(odin root)
+    html_template="$odin_main/index_template.html"
+    emcc_out="$out_dir/index.html"
+    emcc_files=("$odin_out" "$ODIN_PATH/vendor/raylib/wasm/libraylib.a" "$ODIN_PATH/vendor/raylib/wasm/libraygui.a")
+    emcc_flags=(-sUSE_GLFW=3 -sWASM_BIGINT -sWARN_ON_UNDEFINED_SYMBOLS=0 -sASSERTIONS --shell-file "$html_template" --preload-file assets)
 
-    copy "!ODIN_PATH!\core\sys\wasm\js\odin.js" "%out_dir%" >NUL
-    call emcc -o "!emcc_out!" !emcc_files! !emcc_flags!
-    if !ERRORLEVEL! NEQ 0 exit /b 11
+    cp "$ODIN_PATH/core/sys/wasm/js/odin.js" "$out_dir/"
+    emcc -o "$emcc_out" "${emcc_files[@]}" "${emcc_flags[@]}"
 
-    if exist "%odin_out%" del "%odin_out%" >NUL
-)
+    rm -f "$odin_out"
+fi
 
-:: Copy assets for release build
-if "%build_mode%"=="release" (
-    echo Copying assets...
-    robocopy assets "%out_dir%\assets" /mir >nul
-)
+# Copy assets for release build
+if [[ $build_mode == "release" ]]; then
+    echo "Copying assets..."
+    mkdir -p "$out_dir/assets"
+    cp -r assets/* "$out_dir/assets/"
+fi
 
-echo %build_name% build created in %out_dir%
+echo "$build_name build created in $out_dir"

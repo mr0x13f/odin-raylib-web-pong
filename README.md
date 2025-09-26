@@ -12,22 +12,28 @@ This project was meant to try out the feasability of making a graphical applicat
 - **Odin compiler** from January 1st 2025 or newer
     - https://odin-lang.org/docs/install/#official-releases
     - On Windows: Requires MSVC and Windows SDK
-- **Emscripten SDK**
+- **(For web builds) Emscripten SDK**
     - https://emscripten.org/docs/getting_started/downloads.html#installation-instructions-using-the-emsdk-recommended
+    - Also `EMSCRIPTEN_SDK_DIR` in `build.bat`
+- **(On Windows) Git Bash**
+    - `build.bat` uses Git-Bash by default on Windows to itself under Bash
+    - Git-Bash ships with Git so you should already have it, otherwise install Git
+    - If you wish to use another Bash, edit the line `set BASH=` in `build.bat`
 
 ### Desktop builds
-- For debug builds run `build_web.bat/sh debug`
-- For release builds run `build_web.bat/sh web`
+- For debug builds run `build.bat debug`
+- For release builds run `build.bat web`
 
 ### Web build
-1. Point `EMSCRIPTEN_SDK_DIR` in `build_web.bat/sh` to where you installed emscripten.
-2. Run `build.bat/sh web`.
+1. Point `EMSCRIPTEN_SDK_DIR` in `build.bat` to where you installed emscripten.
+2. Run `build.bat web`.
 3. Web game is in the `build/web` folder.
 
 > [!NOTE]
-> `build.bat` is for windows, `build.sh` is for Linux / macOS.
+> On Linux and macOS, `build.bat` must be invoked as `sh build.bat`.
 
 > [!WARNING]
-> You might not be able to run `build/web/index.html` directly due to "CORS policy" javascript errors. You can work around that by running a small server, i.e.:
+> You might not be able to run `build/web/index.html` directly due to "CORS policy" javascript errors.
+> You can work around that by running a small server, i.e.:
 > - `npx http-server ./build/web -c-1`
 > - `python -m http.server --directory ./build/web`

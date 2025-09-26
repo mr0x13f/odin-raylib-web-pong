@@ -5,8 +5,8 @@
             "label": "Debug Build",
             "type": "shell",
             "windows": { "command": "./build.bat" },
-            "linux":   { "command": "./build.sh"  },
-            "osx":     { "command": "./build.sh"  },
+            "linux":   { "command": "sh build.bat"  },
+            "osx":     { "command": "sh build.bat"  },
             "args": [ "debug" ],
             "presentation": {
                 "clear": true,
@@ -17,8 +17,8 @@
             "label": "Release Build",
             "type": "shell",
             "windows": { "command": "./build.bat" },
-            "linux":   { "command": "./build.sh"  },
-            "osx":     { "command": "./build.sh"  },
+            "linux":   { "command": "sh build.bat"  },
+            "osx":     { "command": "sh build.bat"  },
             "args": [ "release" ],
             "presentation": {
                 "clear": true,
@@ -29,8 +29,8 @@
             "label": "Web Build",
             "type": "shell",
             "windows": { "command": "./build.bat" },
-            "linux":   { "command": "./build.sh"  },
-            "osx":     { "command": "./build.sh"  },
+            "linux":   { "command": "sh build.bat"  },
+            "osx":     { "command": "sh build.bat"  },
             "args": [ "web" ],
             "presentation": {
                 "clear": true,

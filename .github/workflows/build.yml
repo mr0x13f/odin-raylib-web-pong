@@ -17,13 +17,13 @@ jobs:
       - uses: mymindstorm/setup-emsdk@v14
       - uses: actions/checkout@v4
       - name: Set Script Permissions
-        run: chmod +x build.sh
+        run: chmod +x build.bat
       - name: Build debug
-        run: ./build.sh debug
+        run: sh build.bat debug
       - name: Build release
-        run: ./build.sh release
+        run: sh build.bat release
       - name: Build web
-        run: ./build.sh web
+        run: sh build.bat web
       - name: Upload web build artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -43,13 +43,13 @@ jobs:
       - uses: mymindstorm/setup-emsdk@v14
       - uses: actions/checkout@v4
       - name: Set Script Permissions
-        run: chmod +x build.sh
+        run: chmod +x build.bat
       - name: Build debug
-        run: ./build.sh debug
+        run: sh build.bat debug
       - name: Build release
-        run: ./build.sh release
+        run: sh build.bat release
       - name: Build web
-        run: ./build.sh web
+        run: sh build.bat web
 
   build_windows:
     name: Windows

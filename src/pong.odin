@@ -1,11 +1,12 @@
 package game
 
+import "core:log"
 import "core:mem"
-import rl "vendor:raylib"
-import rlgl "vendor:raylib/rlgl"
 import "core:math/linalg/glsl"
 import "core:math"
 import "core:math/rand"
+import rl "vendor:raylib"
+import rlgl "vendor:raylib/rlgl"
 
 // COLOR :: 0x085447FF
 COLOR :: 0x1A1A20FF
@@ -14,7 +15,7 @@ MAX_PLAYERS :: 4
 MAX_MOVE_ITERATIONS :: 4
 MAX_PADDLE_BOUNCE_ANGLE :: 75
 RANDOM_SERVE_ANGLE_DEVIATION :: 15
-BALL_START_SPEED :: 0.3
+BALL_START_SPEED :: 0.5
 BALL_SPEED_SCALE_PER_HIT :: 1.1
 MAX_BALL_SPEED :: 2
 
@@ -331,6 +332,7 @@ pong_move_ball :: proc(ball: ^Ent_Ball, dt: f32) {
 }
 
 pong_paddle_bounce_ball :: proc(ball: ^Ent_Ball, paddle: ^Ent_Paddle) {
+    // Bounce ball at angle depending on where on the paddle it hit
     hit_point := find_aabb_overlap_center(ball.box, paddle.box)
     hit_point_on_paddle: vec2 = (hit_point - paddle.center) / paddle.size * 2 // -1..1
     hit_point_on_paddle_axis: f32 = hit_point_on_paddle.x * -paddle.direction.y + hit_point_on_paddle.y * paddle.direction.x
@@ -339,13 +341,22 @@ pong_paddle_bounce_ball :: proc(ball: ^Ent_Ball, paddle: ^Ent_Paddle) {
     new_speed := min(glsl.length(ball.velocity) * BALL_SPEED_SCALE_PER_HIT, MAX_BALL_SPEED)
     ball.velocity = bounce_direction * new_speed
 
-    // TODO: move out of the way when hitting on the side
+    // Find how far 'behind' the front of the paddle the ball reaches
+    hugging_distance := 0.5 * glsl.abs(ball.size + paddle.size)
+    distance_behind := -glsl.abs(ball.center - paddle.center) + hugging_distance
+    distance_behind_on_paddle_axis := glsl.dot(distance_behind, paddle.direction)
+    // Move ball along the direction it's moving so it's in front of the paddle
+    if (distance_behind_on_paddle_axis > 0) {
+        log.info("behind") // TODO: still off
+        seconds_to_move := distance_behind / glsl.dot(ball.velocity, paddle.direction)
+        ball.center += ball.velocity * seconds_to_move
+        ball.center += paddle.direction * math.F32_EPSILON
+    }
 }
 
 pong_goal :: proc(ball: ^Ent_Ball, goal: ^Ent_Goal) {
     // TODO: score
     destroy_entity(ball)
-    // FIXME: too fast somehow
     serve_direction := - find_player_paddle(goal.player).direction
     pong_serve(serve_direction)
 }

@@ -1,7 +1,7 @@
 package game
 
-import rl "vendor:raylib"
 import "core:math"
+import rl "vendor:raylib"
 
 vec2 :: [2]f32
 

@@ -1,6 +1,6 @@
 package game
 
-import "core:log"
+import "core:reflect"
 import "core:mem"
 import "core:math/linalg/glsl"
 import "core:math"
@@ -15,13 +15,15 @@ MAX_PLAYERS :: 4
 MAX_MOVE_ITERATIONS :: 4
 MAX_PADDLE_BOUNCE_ANGLE :: 75
 RANDOM_SERVE_ANGLE_DEVIATION :: 15
-BALL_START_SPEED :: 0.5
+BALL_START_SPEED :: 0.4
 BALL_SPEED_SCALE_PER_HIT :: 1.1
 MAX_BALL_SPEED :: 2
+BALL_SIZE :: 0.035
 
 Pong_State :: struct {
     mode: Pong_Mode,
     entities: [MAX_ENTITIES]Maybe(Entity),
+    score: [MAX_PLAYERS]i32,
 }
 
 Pong_Mode :: enum {
@@ -37,6 +39,15 @@ Entity :: struct {
 }
 
 Entity_Variant :: union #no_nil {
+    Ent_Dummy,
+    Ent_Paddle,
+    Ent_Ball,
+    Ent_Goal,
+    Ent_Wall,
+}
+
+// Must be identicaly to Entity_Variant
+Entity_Variant_Name :: enum {
     Ent_Dummy,
     Ent_Paddle,
     Ent_Ball,
@@ -73,11 +84,12 @@ Ent_Wall :: struct {
 
 pong_state: Pong_State
 
-color_field := rl.GetColor(COLOR)
-color_net := rl.ColorLerp(color_field, rl.WHITE, 0.2)
+color_field  := rl.GetColor(COLOR)
+color_net    := rl.ColorLerp(color_field, rl.WHITE, 0.2)
 color_paddle := rl.ColorLerp(color_field, rl.WHITE, 0.7)
-color_ball := color_paddle
-color_wall := color_paddle
+color_ball   := color_paddle
+color_wall   := color_paddle
+color_score  := color_net
 
 touch_input := false
 
@@ -98,15 +110,13 @@ pong_update :: proc(dt: f32) {
         touch_input = true
         for i in 0..<touch_count {
             touch_pos := rl.GetTouchPosition(i)
-            touch_field_pos := (touch_pos - field_top_left) / field_box.size
-            touch_field_pos = { clamp(touch_field_pos.x, 0, 1), clamp(touch_field_pos.y, 0, 1) }
+            touch_field_pos := glsl.saturate((touch_pos - field_top_left) / field_box.size)
             player := pong_get_input_player_from_field_pos(touch_field_pos)
             if player != -1 { player_inputs[player] = touch_field_pos }
         }
     } else if !touch_input {
         mouse_pos := rl.GetMousePosition()
-        mouse_field_pos := (mouse_pos - field_top_left) / field_box.size
-        mouse_field_pos = { clamp(mouse_field_pos.x, 0, 1), clamp(mouse_field_pos.y, 0, 1) }
+        mouse_field_pos := glsl.saturate((mouse_pos - field_top_left) / field_box.size)
         player := pong_get_input_player_from_field_pos(mouse_field_pos)
         if player != -1 { player_inputs[player] = mouse_field_pos }
     }
@@ -162,13 +172,38 @@ pong_draw_field :: proc() {
         #partial switch &e in (&entity.?).variant {
             case Ent_Paddle:
 	            rl.DrawRectangleRec(box_to_rect(e.box), color_paddle)
+                pong_draw_paddle_score(&e)
             case Ent_Ball:
 	            rl.DrawRectangleRec(box_to_rect(e.box), color_ball)
             case Ent_Wall:
 	            rl.DrawRectangleRec(box_to_rect(e.box), color_wall)
+            case Ent_Goal:
+	            rl.DrawRectangleRec(box_to_rect(e.box), color_net)
         }
     }
 
+}
+
+pong_draw_paddle_score :: proc(paddle: ^Ent_Paddle) {
+    score := pong_state.score[paddle.player]
+    pos: vec2
+
+    #partial switch pong_state.mode {
+        case .Singleplayer:
+            pos = { 0.5, 0.5 }
+        case .Twoplayer: fallthrough
+        case .Fourplayer:
+            pos =  { 0.5, 0.5 } - paddle.direction * 0.1
+    }
+
+    font_size: f32 = 0.1
+    spacing: f32 = font_size/4
+    rotation: f32 = rotation_between({0, -1}, paddle.direction)
+    font := rl.GetFontDefault()
+    text := rl.TextFormat("%i", score)
+    text_size := rl.MeasureTextEx(font, text, font_size, spacing)
+    top_left_pos := pos - text_size/2 // TODO: not correct for rotated for some reason
+    rl.DrawTextPro(font, text, top_left_pos, {}, rotation, font_size, spacing, color_score)
 }
 
 pong_ui :: proc() {
@@ -259,7 +294,7 @@ pong_control_paddle :: proc(paddle: ^Ent_Paddle, player_inputs: [MAX_PLAYERS]May
 
     for iteration < MAX_MOVE_ITERATIONS {
 
-        hit, hit_ent := shapecast(paddle, remaining_movement)
+        hit, hit_ent := shapecast(paddle, remaining_movement, { .Ent_Wall })
 
         // No hit, stop early
         if (!hit.hit) {
@@ -276,8 +311,6 @@ pong_control_paddle :: proc(paddle: ^Ent_Paddle, player_inputs: [MAX_PLAYERS]May
             case Ent_Wall:
                 // Just stop
                 return
-            case Ent_Ball:
-                pong_paddle_bounce_ball(&e, paddle)
         }
 
         // Do another swept iteration for the remaining movement
@@ -310,6 +343,9 @@ pong_move_ball :: proc(ball: ^Ent_Ball, dt: f32) {
                 // Bounce off at angle depending on position on paddle
                 pong_paddle_bounce_ball(ball, &e)
                 ball.last_hit_player = e.player
+                if pong_state.mode == .Singleplayer {
+                    pong_state.score[0] += 1
+                }
             case Ent_Wall:
                 // Bounce off
                 ball.velocity = glsl.reflect(ball.velocity, hit.normal)
@@ -340,28 +376,29 @@ pong_paddle_bounce_ball :: proc(ball: ^Ent_Ball, paddle: ^Ent_Paddle) {
     bounce_direction := rotate(paddle.direction, bounce_angle)
     new_speed := min(glsl.length(ball.velocity) * BALL_SPEED_SCALE_PER_HIT, MAX_BALL_SPEED)
     ball.velocity = bounce_direction * new_speed
-
-    // Find how far 'behind' the front of the paddle the ball reaches
-    hugging_distance := 0.5 * glsl.abs(ball.size + paddle.size)
-    distance_behind := -glsl.abs(ball.center - paddle.center) + hugging_distance
-    distance_behind_on_paddle_axis := glsl.dot(distance_behind, paddle.direction)
-    // Move ball along the direction it's moving so it's in front of the paddle
-    if (distance_behind_on_paddle_axis > 0) {
-        log.info("behind") // TODO: still off
-        seconds_to_move := distance_behind / glsl.dot(ball.velocity, paddle.direction)
-        ball.center += ball.velocity * seconds_to_move
-        ball.center += paddle.direction * math.F32_EPSILON
-    }
 }
 
 pong_goal :: proc(ball: ^Ent_Ball, goal: ^Ent_Goal) {
-    // TODO: score
     destroy_entity(ball)
     serve_direction := - find_player_paddle(goal.player).direction
     pong_serve(serve_direction)
+
+    #partial switch pong_state.mode {
+        case .Singleplayer:
+            pong_state.score[goal.player] = 0
+        case .Twoplayer:
+            pong_state.score[1 - goal.player] += 1
+        case .Fourplayer:
+            if ball.last_hit_player != nil {
+                pong_state.score[ball.last_hit_player.?] += 1
+            } else {
+                pong_state.score[goal.player] -= 1
+                pong_state.score[goal.player] = max(0, pong_state.score[goal.player])
+            }
+    }
 }
 
-shapecast :: proc(shape: ^Entity, movement: vec2) -> (hit: Swept_Aabb_Hit, hit_ent: Maybe(^Entity)) {
+shapecast :: proc(shape: ^Entity, movement: vec2, variant_filter: bit_set[Entity_Variant_Name] = ~bit_set[Entity_Variant_Name]{} ) -> (hit: Swept_Aabb_Hit, hit_ent: Maybe(^Entity)) {
     first_hit_entity: Maybe(^Entity) = nil
     first_hit: Swept_Aabb_Hit = {
         hit = false,
@@ -371,7 +408,12 @@ shapecast :: proc(shape: ^Entity, movement: vec2) -> (hit: Swept_Aabb_Hit, hit_e
     // Find first colliding entity
     for &entity in pong_state.entities {
         if entity == nil || &entity.? == shape { continue }
+
+        variant := transmute(Entity_Variant_Name)reflect.get_union_variant_raw_tag(entity.?.variant)
+        if variant not_in variant_filter { continue }
+
         new_hit := swept_aabb_collision(entity.?.box, shape.box, movement)
+
         if (new_hit.hit && new_hit.time < first_hit.time) {
             first_hit = new_hit
             first_hit_entity = &entity.?
@@ -392,12 +434,13 @@ find_player_paddle :: proc(player: i32) -> ^Ent_Paddle {
 
 pong_start_singleplayer :: proc() {
     pong_state.mode = .Singleplayer
-    clear_entities()
+    mem.zero_slice(pong_state.entities[:])
+    mem.zero_slice(pong_state.score[:])
     
     // Paddles
     summon_entity(Entity {
         center = { 0.5, 0.9, },
-        size = { 0.2, 0.05, },
+        size = { 0.2, BALL_SIZE, },
         variant = Ent_Paddle {
             control_axis = { 1, 0 },
             direction = { 0, -1 },
@@ -412,18 +455,18 @@ pong_start_singleplayer :: proc() {
     })
     summon_entity(Entity {
         center = { -0.1, 0.5, },
-        size = { 0.2, 1, },
+        size = { 0.2, 1.2, },
         variant = Ent_Wall { },
     })
     summon_entity(Entity {
         center = { 1.1, 0.5, },
-        size = { 0.2, 1, },
+        size = { 0.2, 1.2, },
         variant = Ent_Wall { },
     })
     // Goals
     summon_entity(Entity {
         center = { 0.5, 1.1, },
-        size = { 1, 0.2, },
+        size = { 1, 0.1, },
         variant = Ent_Goal {
             player = 0,
         },
@@ -434,12 +477,13 @@ pong_start_singleplayer :: proc() {
 
 pong_start_twoplayer :: proc() {
     pong_state.mode = .Twoplayer
-    clear_entities()
+    mem.zero_slice(pong_state.entities[:])
+    mem.zero_slice(pong_state.score[:])
 
     // Paddles
     summon_entity(Entity {
         center = { 0.5, 0.9, },
-        size = { 0.2, 0.05, },
+        size = { 0.2, BALL_SIZE, },
         variant = Ent_Paddle {
             control_axis = { 1, 0 },
             direction = { 0, -1 },
@@ -448,7 +492,7 @@ pong_start_twoplayer :: proc() {
     })
     summon_entity(Entity {
         center = { 0.5, 0.1 },
-        size = { 0.2, 0.05, },
+        size = { 0.2, BALL_SIZE, },
         variant = Ent_Paddle {
             control_axis = { 1, 0 },
             direction = { 0, 1 },
@@ -458,25 +502,25 @@ pong_start_twoplayer :: proc() {
     // Walls
     summon_entity(Entity {
         center = { -0.1, 0.5, },
-        size = { 0.2, 1, },
+        size = { 0.2, 1.2, },
         variant = Ent_Wall { },
     })
     summon_entity(Entity {
         center = { 1.1, 0.5, },
-        size = { 0.2, 1, },
+        size = { 0.2, 1.2, },
         variant = Ent_Wall { },
     })
     // Goals
     summon_entity(Entity {
         center = { 0.5, 1.1, },
-        size = { 1, 0.2, },
+        size = { 1, 0.1, },
         variant = Ent_Goal {
             player = 0,
         },
     })
     summon_entity(Entity {
         center = { 0.5, -0.1, },
-        size = { 1, 0.2, },
+        size = { 1, 0.1, },
         variant = Ent_Goal {
             player = 1,
         },
@@ -487,12 +531,15 @@ pong_start_twoplayer :: proc() {
 
 pong_start_fourplayer :: proc() {
     pong_state.mode = .Fourplayer
-    clear_entities()
+    mem.zero_slice(pong_state.entities[:])
+    mem.zero_slice(pong_state.score[:])
+
+    corner_wall_size: f32 = 0.1 + BALL_SIZE/2
 
     // Paddles
     summon_entity(Entity {
         center = { 0.5, 0.9, },
-        size = { 0.2, 0.05, },
+        size = { 0.2, BALL_SIZE, },
         variant = Ent_Paddle {
             control_axis = { 1, 0 },
             direction = { 0, -1 },
@@ -501,7 +548,7 @@ pong_start_fourplayer :: proc() {
     })
     summon_entity(Entity {
         center = { 0.5, 0.1 },
-        size = { 0.2, 0.05, },
+        size = { 0.2, BALL_SIZE, },
         variant = Ent_Paddle {
             control_axis = { 1, 0 },
             direction = { 0, 1 },
@@ -510,7 +557,7 @@ pong_start_fourplayer :: proc() {
     })
     summon_entity(Entity {
         center = { 0.9, 0.5 },
-        size = { 0.05, 0.2, },
+        size = { BALL_SIZE, 0.2, },
         variant = Ent_Paddle {
             control_axis = { 0, 1 },
             direction = { -1, 0 },
@@ -519,7 +566,7 @@ pong_start_fourplayer :: proc() {
     })
     summon_entity(Entity {
         center = { 0.1, 0.5, },
-        size = { 0.05, 0.2, },
+        size = { BALL_SIZE, 0.2, },
         variant = Ent_Paddle {
             control_axis = { 0, 1 },
             direction = { 1, 0 },
@@ -528,50 +575,50 @@ pong_start_fourplayer :: proc() {
     })
     // Walls
     summon_entity(Entity {
-        center = { 0.06, 0.06, },
-        size = { 0.2, 0.2, },
+        center = { corner_wall_size/2, corner_wall_size/2 },
+        size = { corner_wall_size, corner_wall_size },
         variant = Ent_Wall { },
     })
     summon_entity(Entity {
-        center = { 1-0.06, 0.06, },
-        size = { 0.2, 0.2, },
+        center = { 1-corner_wall_size/2, corner_wall_size/2 },
+        size = { corner_wall_size, corner_wall_size },
         variant = Ent_Wall { },
     })
     summon_entity(Entity {
-        center = { 0.06, 1-0.06, },
-        size = { 0.2, 0.2, },
+        center = { corner_wall_size/2, 1-corner_wall_size/2 },
+        size = { corner_wall_size, corner_wall_size },
         variant = Ent_Wall { },
     })
     summon_entity(Entity {
-        center = { 1-0.06, 1-0.06, },
-        size = { 0.2, 0.2, },
+        center = { 1-corner_wall_size/2, 1-corner_wall_size/2 },
+        size = { corner_wall_size, corner_wall_size },
         variant = Ent_Wall { },
     })
     // Goals
     summon_entity(Entity {
         center = { 0.5, 1.1, },
-        size = { 1, 0.2, },
+        size = { 1, 0.1, },
         variant = Ent_Goal {
             player = 0,
         },
     })
     summon_entity(Entity {
         center = { 0.5, -0.1, },
-        size = { 1, 0.2, },
+        size = { 1, 0.1, },
         variant = Ent_Goal {
             player = 1,
         },
     })
     summon_entity(Entity {
         center = { 1.1, 0.5, },
-        size = { 0.2, 1, },
+        size = { 0.1, 1, },
         variant = Ent_Goal {
             player = 2,
         },
     })
     summon_entity(Entity {
         center = { -0.1, 0.5, },
-        size = { 0.2, 1, },
+        size = { 0.1, 1, },
         variant = Ent_Goal {
             player = 3,
         },
@@ -581,17 +628,20 @@ pong_start_fourplayer :: proc() {
 }
 
 pong_serve :: proc(direction: vec2) {
+    if pong_state.mode == .None { return }
+
     serve_angle := rand.float32_range(-1, 1) * RANDOM_SERVE_ANGLE_DEVIATION
     serve_direction := rotate(direction, serve_angle)
     
     summon_entity(Entity {
         center = vec2 { 0.5, 0.5 } - direction*0.2,
-        size = { 0.05, 0.05 },
+        size = { BALL_SIZE, BALL_SIZE},
         variant = Ent_Ball {
             velocity = serve_direction * BALL_START_SPEED,
         },
     })
 }
+
 destroy_entity :: proc(entity: ^Entity) {
     for i in 0..<len(pong_state.entities) {
         ent_at_idx := (&pong_state.entities[i].(Entity)) or_continue
@@ -600,10 +650,6 @@ destroy_entity :: proc(entity: ^Entity) {
             return
         }
     }
-}
-
-clear_entities :: proc() {
-    mem.zero_slice(pong_state.entities[:])
 }
 
 summon_entity :: proc(entity: Entity) -> (ent: ^Entity, ok: bool) {

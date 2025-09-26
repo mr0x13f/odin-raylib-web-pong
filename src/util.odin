@@ -1,5 +1,6 @@
 package game
 
+import "core:math/linalg/glsl"
 import "core:math"
 import rl "vendor:raylib"
 
@@ -33,4 +34,9 @@ rotate :: proc(v: vec2, degrees: f32) -> vec2 {
         v.x * c - v.y * s,
         v.x * s + v.y * c,
     }
+}
+
+rotation_between :: proc(a, b: vec2) -> f32 {
+    cross := a.x*b.y - a.y*b.x
+    return math.to_degrees(math.atan2(cross, glsl.dot(a, b)))
 }

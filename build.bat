@@ -18,14 +18,15 @@ echo \" <<'WINDOWS' >/dev/null ">NUL "\" \`""
 :: ------------------------------------------------------
 @ECHO OFF
 
-:: Put your preferred bash here
+:: Put your preferred Bash here
 set BASH=
 
 :: Try finding Git Bash
 if defined BASH goto run
 for /f "delims=" %%i in ('where git.exe 2^>nul') do set "GIT_EXE=%%i"
 set "BASH=%GIT_EXE:\cmd\git.exe=\bin\bash.exe%"
-if /I "%BASH%"=="%GIT_EXE%" || not exist "%BASH%" echo [ERROR] No Bash path specified and could not find Git Bash. && exit /b 1
+if /I "%BASH%"=="%GIT_EXE%" (set "error=1") else if not exist "%BASH%" (set "error=1")
+if defined error (echo [ERROR] No Bash path specified and could not find Git Bash. & exit /b 1)
 
 :: Run this same script with Bash
 :run
@@ -45,9 +46,9 @@ EMSCRIPTEN_SDK_DIR=PATH/TO/YOUR/emsdk
 for arg in "$@"; do declare $arg='1'; done
 
 # Build mode
-if [ -v debug   ]; then build_mode=debug;   fi
-if [ -v release ]; then build_mode=release; fi
-if [ -v web     ]; then build_mode=web;     fi
+if [ -n "${debug+x}"   ]; then build_mode=debug;   fi
+if [ -n "${release+x}" ]; then build_mode=release; fi
+if [ -n "${web+x}"     ]; then build_mode=web;     fi
 
 mode_count=$(( ${debug:-0} + ${release:-0} + ${web:-0} ))
 if [[ $mode_count -eq 0 ]]; then { echo "[ERROR] No build mode specified"; exit 1; } fi
@@ -62,7 +63,8 @@ case "$(uname -s)" in
 esac
 
 # Prepare
-echo "[${platform^} ${build_mode^} build]"
+build_name="$(echo "$platform $build_mode" | awk '{printf toupper(substr($1,1,1)) substr($1,2) " " toupper(substr($2,1,1)) substr($2,2)}')"
+echo "[$build_name build]"
 out_dir="build/$build_mode"
 mkdir -p "$out_dir"
 
@@ -106,4 +108,4 @@ if [[ $build_mode == "release" ]]; then
     cp -r assets/* "$out_dir/assets/"
 fi
 
-echo "${platform^} ${build_mode^} build created in $out_dir"
+echo "$build_name build created in $out_dir"

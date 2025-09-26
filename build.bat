@@ -16,7 +16,7 @@ echo \" <<'BATCH' >/dev/null ">NUL "\" \`""
 :: ------------------------------------------------------
 :: Windows Batch section, skipped under Bash
 :: ------------------------------------------------------
-@ECHO OFF
+@echo off
 
 :: Put your preferred Windows Bash here
 set WIN_BASH=
@@ -39,7 +39,7 @@ BATCH
 # ------------------------------------------------------
 
 # Point this to where you installed the Emscripten SDK
-EMSCRIPTEN_SDK_DIR=.
+EMSCRIPTEN_SDK_DIR=D:\\Users\\0x13F\\Documents\\emsdk
 
 # Unpack Arguments
 for arg in "$@"; do declare $arg='1'; done
@@ -93,20 +93,20 @@ odin build "$odin_main" ${odin_flags[@]} -out="$odin_out" || exit 1
 # Emscripten
 if [ $build_mode == "web" ]; then
     echo "Compiling WASM..."
-    export EMSDK_QUIET=1
-    source "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" > /dev/null 2>&1 &
-    cmd "$EMSCRIPTEN_SDK_DIR/emsdk_env.bat"   > /dev/null 2>&1 &
-
-    ODIN_PATH=$(odin root)
+    odin_path=$(odin root)
     html_template="$odin_main/index_template.html"
     emcc_out="$out_dir/index.html"
-    emcc_files=("$odin_out" "$ODIN_PATH/vendor/raylib/wasm/libraylib.a" "$ODIN_PATH/vendor/raylib/wasm/libraygui.a")
+    emcc_files=("$odin_out" "$odin_path/vendor/raylib/wasm/libraylib.a" "$odin_path/vendor/raylib/wasm/libraygui.a")
     emcc_flags=(-sUSE_GLFW=3 -sWASM_BIGINT -sWARN_ON_UNDEFINED_SYMBOLS=0 -sASSERTIONS --shell-file "$html_template" --preload-file assets)
 
-    cp "$ODIN_PATH/core/sys/wasm/js/odin.js" "$out_dir/"
+    export EMSDK_QUIET=1
+    # Exclude faulty MS Store version of Python that doesn't work under Git Bash from PATH *sigh*
+    export PATH=$(echo "$PATH" | sed -E 's;:/c/Users/[^:]+/AppData/Local/Microsoft/WindowsApps;;g')
+    source "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh"
     emcc -o "$emcc_out" "${emcc_files[@]}" "${emcc_flags[@]}" ||
-        { echo "emcc failed, did you set EMSCRIPTEN_SDK_DIR correctly?"; exit 1; }
+        { echo "Emscripten failed, did you set EMSCRIPTEN_SDK_DIR correctly?"; exit 1; }
 
+    cp "$odin_path/core/sys/wasm/js/odin.js" "$out_dir/"
     rm -f "$odin_out"
 fi
 

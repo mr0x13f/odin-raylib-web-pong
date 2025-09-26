@@ -18,19 +18,19 @@ echo \" <<'WINDOWS' >/dev/null ">NUL "\" \`""
 :: ------------------------------------------------------
 @ECHO OFF
 
-:: Put your preferred Bash here
-set BASH=
+:: Put your preferred Windows Bash here
+set WIN_BASH=
 
 :: Try finding Git Bash
-if defined BASH goto run
+if defined WIN_BASH goto run
 for /f "delims=" %%i in ('where git.exe 2^>nul') do set "GIT_EXE=%%i"
-set "BASH=%GIT_EXE:\cmd\git.exe=\bin\bash.exe%"
-if /I "%BASH%"=="%GIT_EXE%" (set "error=1") else if not exist "%BASH%" (set "error=1")
+set "WIN_BASH=%GIT_EXE:\cmd\git.exe=\bin\bash.exe%"
+if /I "%WIN_BASH%"=="%GIT_EXE%" (set "error=1") else if not exist "%WIN_BASH%" (set "error=1")
 if defined error (echo [ERROR] No Bash path specified and could not find Git Bash. & exit /b 1)
 
 :: Run this same script with Bash
 :run
-"%BASH%" "%~f0" %*
+"%WIN_BASH%" "%~f0" %*
 exit
 WINDOWS
 
@@ -39,8 +39,7 @@ WINDOWS
 # ------------------------------------------------------
 
 # Point this to where you installed the Emscripten SDK
-# EMSCRIPTEN_SDK_DIR="/path/to/your/emsdk"
-EMSCRIPTEN_SDK_DIR=PATH/TO/YOUR/emsdk
+EMSCRIPTEN_SDK_DIR=.
 
 # Unpack Arguments
 for arg in "$@"; do declare $arg='1'; done
@@ -53,6 +52,12 @@ if [ -n "${web+x}"     ]; then build_mode=web;     fi
 mode_count=$(( ${debug:-0} + ${release:-0} + ${web:-0} ))
 if [[ $mode_count -eq 0 ]]; then { echo "[ERROR] No build mode specified"; exit 1; } fi
 if [[ $mode_count -gt 1 ]]; then { echo "[ERROR] Too many build modes specified"; exit 1; } fi
+
+# Make sure we can find Emscripten SDK
+if [ "$build_mode" = "web" ] && ( [ ! -e "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" ] || [ ! -e "$EMSCRIPTEN_SDK_DIR/emcc" ] ); then
+    echo "[ERROR] Can't find Emscripten SDK, make sure EMSCRIPTEN_SDK_DIR is set correctly"
+    exit 1
+fi
 
 # Platform
 case "$(uname -s)" in
@@ -81,7 +86,7 @@ if [ $build_mode = "release" ]; then odin_flags="$odin_flags -o:speed -disable-a
 if [ $build_mode = "web"     ]; then odin_flags="$odin_flags -o:speed -disable-assert -target:js_wasm32 -build-mode:obj -define:RAYLIB_WASM_LIB=env.o -define:RAYGUI_WASM_LIB=env.o"; fi
 
 echo Compiling Odin...
-odin build $odin_main -out="$odin_out"
+odin build $odin_main -out="$odin_out" || exit 1
 
 # Emscripten
 if [[ $build_mode == "web" ]]; then
@@ -96,7 +101,7 @@ if [[ $build_mode == "web" ]]; then
     emcc_flags=(-sUSE_GLFW=3 -sWASM_BIGINT -sWARN_ON_UNDEFINED_SYMBOLS=0 -sASSERTIONS --shell-file "$html_template" --preload-file assets)
 
     cp "$ODIN_PATH/core/sys/wasm/js/odin.js" "$out_dir/"
-    emcc -o "$emcc_out" "${emcc_files[@]}" "${emcc_flags[@]}"
+    emcc -o "$emcc_out" "${emcc_files[@]}" "${emcc_flags[@]}" || exit 1
 
     rm -f "$odin_out"
 fi

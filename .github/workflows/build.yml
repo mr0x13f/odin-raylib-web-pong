@@ -63,11 +63,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Build debug
-        run: ./build.bat debug
+        run: bash build.bat debug
       - name: Build release
-        run: ./build.bat release
+        run: bash build.bat release
       - name: Build web
-        run: ./build.bat web
+        run: bash build.bat web
 
   deploy:
     name: Deploy GitHub Pages

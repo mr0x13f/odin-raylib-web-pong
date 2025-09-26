@@ -18,7 +18,7 @@ This project was meant to try out the feasability of making a graphical applicat
 - **(On Windows) Git Bash**
     - `build.bat` uses Git-Bash by default on Windows to itself under Bash
     - Git-Bash ships with Git so you should already have it, otherwise install Git
-    - If you wish to use another Bash, edit the line `set BASH=` in `build.bat`
+    - If you wish to use another Windows Bash, edit the line `set WIN_BASH=` in `build.bat`
 
 ### Desktop builds
 - For debug builds run `build.bat debug`

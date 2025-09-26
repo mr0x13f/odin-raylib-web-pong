@@ -7,14 +7,14 @@
 : # ------------------------------------------------------
 : # On Linux/macOS, invoke as: $ bash build.bat
 : # ------------------------------------------------------
-: # This script is a polyglottal Batch/Shell script.
+: # This script is a polyglottal Batch/Bash script.
 : # Under Windows it will find Git-Bash and re-run itself under Bash.
 : # On Linux/macOS/Git-Bash it will skip the Windows section.
 : # ------------------------------------------------------
 
-echo \" <<'WINDOWS' >/dev/null ">NUL "\" \`""
+echo \" <<'BATCH' >/dev/null ">NUL "\" \`""
 :: ------------------------------------------------------
-:: Windows section, skipped under Bash
+:: Windows Batch section, skipped under Bash
 :: ------------------------------------------------------
 @ECHO OFF
 
@@ -32,7 +32,7 @@ if defined error (echo [ERROR] No Bash path specified and could not find Git Bas
 :run
 "%WIN_BASH%" "%~f0" %*
 exit
-WINDOWS
+BATCH
 
 # ------------------------------------------------------
 # From now on, this script will run under Bash
@@ -54,10 +54,10 @@ if [[ $mode_count -eq 0 ]]; then { echo "[ERROR] No build mode specified"; exit 
 if [[ $mode_count -gt 1 ]]; then { echo "[ERROR] Too many build modes specified"; exit 1; } fi
 
 # Make sure we can find Emscripten SDK
-if [ "$build_mode" = "web" ] && ( [ ! -e "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" ] || [ ! -e "$EMSCRIPTEN_SDK_DIR/emcc" ] ); then
-    echo "[ERROR] Can't find Emscripten SDK, make sure EMSCRIPTEN_SDK_DIR is set correctly"
-    exit 1
-fi
+# if [ "$build_mode" = "web" ] && ( [ ! -e "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" ] || [ ! -e "$EMSCRIPTEN_SDK_DIR/emcc" ] ); then
+#     echo "[ERROR] Can't find Emscripten SDK, make sure EMSCRIPTEN_SDK_DIR is set correctly"
+#     exit 1
+# fi
 
 # Platform
 case "$(uname -s)" in
@@ -85,8 +85,8 @@ if [ $build_mode = "debug"   ]; then odin_flags="$odin_flags -o:minimal -debug -
 if [ $build_mode = "release" ]; then odin_flags="$odin_flags -o:speed -disable-assert"; fi
 if [ $build_mode = "web"     ]; then odin_flags="$odin_flags -o:speed -disable-assert -target:js_wasm32 -build-mode:obj -define:RAYLIB_WASM_LIB=env.o -define:RAYGUI_WASM_LIB=env.o"; fi
 
-echo Compiling Odin...
-odin build $odin_main -out="$odin_out" || exit 1
+echo Compiling Odin
+odin build "$odin_main" ${odin_flags[@]} -out="$odin_out" || exit 1
 
 # Emscripten
 if [[ $build_mode == "web" ]]; then

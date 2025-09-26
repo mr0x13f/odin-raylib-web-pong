@@ -54,7 +54,7 @@ if [[ $mode_count -eq 0 ]]; then { echo "[ERROR] No build mode specified"; exit 
 if [[ $mode_count -gt 1 ]]; then { echo "[ERROR] Too many build modes specified"; exit 1; } fi
 
 # Make sure we can find Emscripten SDK for web builds
-if [ "$build_mode" = "web" ] && [ ! -e "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" ]; then
+if [ "$build_mode" = "web" ] && [ ! -e "emcc" ] && [ ! -e "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" ]; then
     echo "[ERROR] Can't find Emscripten SDK, make sure EMSCRIPTEN_SDK_DIR is set correctly"; exit 1
 fi
 
@@ -99,7 +99,8 @@ odin build "$odin_main" ${odin_flags[@]} -out="$odin_out" || exit 1
 if [[ $build_mode == "web" ]]; then
     echo "Compiling WASM..."
     export EMSDK_QUIET=1
-    source "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh" || exit 1
+    source "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh"
+    cmd "$EMSCRIPTEN_SDK_DIR/emsdk_env.bat"
 
     ODIN_PATH=$(odin root)
     html_template="$odin_main/index_template.html"

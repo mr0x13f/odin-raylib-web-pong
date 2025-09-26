@@ -39,7 +39,7 @@ BATCH
 # ------------------------------------------------------
 
 # Point this to where you installed the Emscripten SDK
-EMSCRIPTEN_SDK_DIR=D:\\Users\\0x13F\\Documents\\emsdk
+EMSCRIPTEN_SDK_DIR=
 
 # Unpack Arguments
 for arg in "$@"; do declare $arg='1'; done
@@ -100,7 +100,7 @@ if [ $build_mode == "web" ]; then
     emcc_flags=(-sUSE_GLFW=3 -sWASM_BIGINT -sWARN_ON_UNDEFINED_SYMBOLS=0 -sASSERTIONS --shell-file "$html_template" --preload-file assets)
 
     export EMSDK_QUIET=1
-    # Exclude faulty MS Store version of Python that doesn't work under Git Bash from PATH *sigh*
+    # Exclude faulty MS Store version of Python that doesn't work under Git Bash *sigh*
     export PATH=$(echo "$PATH" | sed -E 's;:/c/Users/[^:]+/AppData/Local/Microsoft/WindowsApps;;g')
     source "$EMSCRIPTEN_SDK_DIR/emsdk_env.sh"
     emcc -o "$emcc_out" "${emcc_files[@]}" "${emcc_flags[@]}" ||

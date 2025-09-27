@@ -4,7 +4,7 @@ An implementation of Pong written in Odin using Raylib. Running natively on desk
 
 Based on the [odin-raylib-web](https://github.com/karl-zylinski/odin-raylib-web) project template by Karl Zylinski.
 
-This project was meant to try out the feasability of making a graphical application for the web using WASM with minimal setup. It also tests how usable Odin and Raylib are for a simple game. I was pleasently surprised how easy it was to do both. In fact I found it easier to write Pong in Odin/Raylib than other languages and frameworks I had used before, like Love2d. This is noteworthy as Odin is a native systems language without a garbage collector or fancy OOP features. Compared to this, paying the performance cost and reduced portability that's part of the trade-off with using other "simple" alternatives like Love2d, doesn't seem worth it anymore.
+This project was meant to try out the feasability of making a graphical application for the web using WASM with minimal setup. It also tests how usable Odin and Raylib are for a simple game.
 
 ## Local setup
 

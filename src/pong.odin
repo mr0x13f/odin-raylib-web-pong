@@ -416,7 +416,7 @@ pong_goal :: proc(ball: ^Ent_Ball, goal: ^Ent_Goal) {
             pong_state.scores[1 - goal.player] += 1
         case .Fourplayer:
             if ball.last_hit_player != nil {
-                pong_state.scores[ball.last_hit_player.?] += 10
+                pong_state.scores[ball.last_hit_player.?] += 1
             } else {
                 pong_state.scores[goal.player] -= 1
                 pong_state.scores[goal.player] = max(0, pong_state.scores[goal.player])

@@ -1,11 +1,12 @@
 package game
 
-import "core:reflect"
 import "core:math/linalg/glsl"
 import "core:math"
 import "core:math/rand"
 import rl "vendor:raylib"
 import rlgl "vendor:raylib/rlgl"
+
+ALL_ENTITY_VARIANTS :: Variant_Filter(Entity_Variant) { ~{} }
 
 Pong_State :: struct {
     mode: Pong_Mode,
@@ -27,15 +28,6 @@ Entity :: struct {
 }
 
 Entity_Variant :: union #no_nil {
-    Ent_Dummy,
-    Ent_Paddle,
-    Ent_Ball,
-    Ent_Goal,
-    Ent_Wall,
-}
-
-// Must be identicaly to Entity_Variant
-Entity_Variant_Name :: enum {
     Ent_Dummy,
     Ent_Paddle,
     Ent_Ball,
@@ -316,6 +308,8 @@ pong_get_field_box :: proc() -> Box {
 pong_control_paddle :: proc(paddle: ^Ent_Paddle, player_inputs: [MAX_PLAYERS]Maybe(vec2)) {
     if (player_inputs[paddle.player] == nil) { return }
 
+    shapecast_filter := create_variant_filter(Entity_Variant, { Ent_Wall })
+
     new_pos := paddle.center * (1 - paddle.control_axis) + paddle.control_axis * player_inputs[paddle.player].(vec2)
     initial_movement := new_pos - paddle.center
     remaining_movement := initial_movement
@@ -323,7 +317,7 @@ pong_control_paddle :: proc(paddle: ^Ent_Paddle, player_inputs: [MAX_PLAYERS]May
 
     for iteration < MAX_MOVE_ITERATIONS {
 
-        hit, hit_ent := shapecast(paddle, remaining_movement, { .Ent_Wall })
+        hit, hit_ent := shapecast(paddle, remaining_movement, shapecast_filter)
 
         // No hit, stop early
         if (!hit.hit) {
@@ -428,7 +422,7 @@ pong_goal :: proc(ball: ^Ent_Ball, goal: ^Ent_Goal) {
     pong_serve(serve_direction)
 }
 
-shapecast :: proc(shape: ^Entity, movement: vec2, variant_filter: bit_set[Entity_Variant_Name] = ~bit_set[Entity_Variant_Name]{} ) -> (hit: Swept_Aabb_Hit, hit_ent: Maybe(^Entity)) {
+shapecast :: proc(shape: ^Entity, movement: vec2, variant_filter: Variant_Filter(Entity_Variant) = ALL_ENTITY_VARIANTS) -> (hit: Swept_Aabb_Hit, hit_ent: Maybe(^Entity)) {
     first_hit_entity: Maybe(^Entity) = nil
     first_hit: Swept_Aabb_Hit = {
         hit = false,
@@ -438,7 +432,7 @@ shapecast :: proc(shape: ^Entity, movement: vec2, variant_filter: bit_set[Entity
     // Find first colliding entity
     for &entity in pong_state.entities {
         if entity == nil || &entity.? == shape { continue }
-        if variant_of(&entity.?) not_in variant_filter { continue }
+        if !is_variant_in_filter(entity.?.variant, variant_filter) { continue }
 
         new_hit := swept_aabb_collision(entity.?.box, shape.box, movement)
 
@@ -668,10 +662,6 @@ pong_serve :: proc(direction: vec2) {
             velocity = serve_direction * BALL_START_SPEED,
         },
     })
-}
-
-variant_of :: proc(entity: ^Entity) -> Entity_Variant_Name {
-    return Entity_Variant_Name(reflect.get_union_variant_raw_tag(entity.variant))
 }
 
 destroy_entity :: proc(entity: ^Entity) {

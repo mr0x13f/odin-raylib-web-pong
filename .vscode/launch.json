@@ -15,7 +15,8 @@
             "console": "integratedTerminal",
             "presentation": {
                 "group": "shared"
-            }
+            },
+            "internalConsoleOptions": "neverOpen"
         }
     ]
 }

@@ -1,5 +1,7 @@
 package game
 
+import "base:intrinsics"
+import "core:reflect"
 import "core:math/linalg/glsl"
 import "core:math"
 import rl "vendor:raylib"
@@ -39,4 +41,23 @@ rotate :: proc(v: vec2, degrees: f32) -> vec2 {
 rotation_between :: proc(a, b: vec2) -> f32 {
     cross := a.x*b.y - a.y*b.x
     return math.to_degrees(math.atan2(cross, glsl.dot(a, b)))
+}
+
+Variant_Filter :: struct(Union: typeid) {
+    bit_mask: bit_set[0..<128],
+}
+
+create_variant_filter :: proc($Union: typeid, variants: []typeid) -> (filter: Variant_Filter(Union)) {
+    for variant in variants {
+        union_variant: Union
+        reflect.set_union_variant_typeid(union_variant, variant)
+        tag := reflect.get_union_variant_raw_tag(union_variant)
+        filter.bit_mask += { int(tag) }
+    }
+    return
+}
+
+is_variant_in_filter :: proc(variant: $U, filter: Variant_Filter(U)) -> bool {
+    tag := reflect.get_union_variant_raw_tag(variant)
+    return int(tag) in filter.bit_mask
 }

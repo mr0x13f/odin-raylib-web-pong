@@ -5,7 +5,7 @@ import "core:os"
 import "core:path/filepath"
 import "core:strings"
 import "core:fmt"
-import "lib/builder"
+import "lib/odin_builder/builder"
 
 /*
     ===== Usage =====
@@ -23,6 +23,7 @@ import "lib/builder"
 args: struct {
     debug:   bool "Debug build mode",
     release: bool "Release build mode",
+    web:     bool "Web build mode",
     watch:   bool "Watch for changes",
     vet:     bool "Extra vetting",
     novet:   bool "No vetting",
@@ -37,8 +38,8 @@ main :: proc() {
     if help || len(cli_args) == 0 {
         print_usage(&args); exit(1) }
 
-    if count(debug, release) != 1 {
-        error("Wrong number of build modes, expected 'debug' OR 'release'") }
+    if count(debug, release, web) != 1 {
+        error("Wrong number of build modes, expected ONE OF 'debug', 'release', 'web'") }
 
     // Info
     app_name      := "hellope"
@@ -47,7 +48,7 @@ main :: proc() {
     build_dir     := "build"
 
     // Prepare Build
-    build_mode := debug ? "debug" : release ? "release" : ""
+    build_mode := debug ? "debug" : release ? "release" : web ? "web" : ""
     build_name := fmt.aprintf("%s %s", strings.to_pascal_case(PLATFORM), strings.to_pascal_case(build_mode))
     fmt.printfln("[%s build]", build_name)
     out_dir := filepath.join({ build_dir, build_mode })

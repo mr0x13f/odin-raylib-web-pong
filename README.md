@@ -16,7 +16,7 @@ This project was meant to try out the feasability of making a graphical applicat
     - https://emscripten.org/docs/getting_started/downloads.html#installation-instructions-using-the-emsdk-recommended
     - Also `EMSCRIPTEN_SDK_DIR` in `build.bat`
 - **(On Windows) Git Bash**
-    - `build.bat` uses Git-Bash by default on Windows to itself under Bash
+    - `build.bat` uses Git-Bash by default on Windows to run build.sh under Bash
     - Git-Bash ships with Git so you should already have it, otherwise install Git
     - If you wish to use another Windows Bash, edit the line `set WIN_BASH=` in `build.bat`
 
@@ -28,9 +28,6 @@ This project was meant to try out the feasability of making a graphical applicat
 1. Point `EMSCRIPTEN_SDK_DIR` in `build.bat` to where you installed emscripten.
 2. Run `build.bat web`.
 3. Web game is in the `build/web` folder.
-
-> [!NOTE]
-> On Linux and macOS, `build.bat` must be invoked as `bash build.bat`.
 
 > [!WARNING]
 > You might not be able to run `build/web/index.html` directly due to "CORS policy" javascript errors.

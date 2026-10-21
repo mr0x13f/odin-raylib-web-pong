@@ -45,7 +45,7 @@ if [[ "${1:-}" == "docker" ]]; then
         -q \
         .
 
-    MSYS_NO_PATHCONV=1 exec docker run --rm \
+    MSYS_NO_PATHCONV=1 DOCKER_CLI_HINTS=false exec docker run --rm \
         --mount "type=bind,source=$project_dir,target=/workspace" \
         -w /workspace \
         "$image" \

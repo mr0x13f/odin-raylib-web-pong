@@ -84,8 +84,8 @@ FROM emscripten-runtime AS odin-build
 ARG ODIN_VERSION=dev-2026-10
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    tar \
+    curl tar \
+    llvm clang build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 ENV ODIN_VERSION=${ODIN_VERSION}

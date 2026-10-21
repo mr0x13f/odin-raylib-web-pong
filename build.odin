@@ -34,8 +34,10 @@ main :: proc() {
     using args, builder
     read_args(&args)
 
-    if help || len(cli_args) == 0 {
+    if len(cli_args) == 0 {
         print_usage(&args); exit(1) }
+    if help {
+        print_usage(&args); exit() }
 
     if count(debug, release, web) != 1 {
         error("Wrong number of build modes, expected ONE OF 'debug', 'release', 'web'") }
@@ -71,9 +73,20 @@ main :: proc() {
         build_options.optimization = .Speed
         if WINDOWS { build_options.subsystem = .Windows }
     }
+    if web {
+        odin_out = join(out_dir, app_name)
+        build_options.disable_assert = true
+        build_options.optimization = .Speed
+        build_options.target = "js_wasm32"
+        build_options.define["RAYLIB_WASM_LIB"] = "env.o"
+        build_options.define["RAYGUI_WASM_LIB"] = "env.o"
+        // TODO
+    }
 
     if asan { build_options.sanitize = .Address }
-    if vet  { build_options.vet_unused_procedures = true }
+
+    build_options.vet_packages = { odin_main_pkg }
+    // Default vetting, only omitted with 'novet'
     if !novet {
         build_options.vet_cast = true
         build_options.vet_semicolon = true
@@ -83,6 +96,11 @@ main :: proc() {
         build_options.vet_unused_variables = true
         build_options.vet_using_param = true
         build_options.vet_using_stmt = true
+        build_options.vet_when_shadowing = true
+    }
+    // Additional vetting with 'vet'
+    if vet  {
+        build_options.vet_unused_procedures = true
     }
 
     build_options.vet_packages = { odin_main_pkg }

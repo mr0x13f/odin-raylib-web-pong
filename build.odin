@@ -43,22 +43,25 @@ main :: proc() {
         error("Wrong number of build modes, expected ONE OF 'debug', 'release', 'web'") }
 
     // Info
-    app_name      := "hellope"
-    odin_main_pkg := "hellope"
-    odin_main_dir := "src"
-    build_dir     := "build"
+    app_name  := "odin-raylib-web-pong"
+    build_dir := "build"
 
     // Prepare Build
     build_mode := debug ? "debug" : release ? "release" : web ? "web" : ""
     build_name := fmt.aprintf("%s %s", strings.to_pascal_case(PLATFORM), strings.to_pascal_case(build_mode))
     fmt.printfln("[%s build]", build_name)
-    out_dir := join(build_dir, build_mode)
     
     // Build flags
+    out_dir: string
     odin_out: string
+    odin_main_dir: string
+    odin_main_pkg: string
     build_options: Build_Options
 
     if debug {
+        odin_main_dir = "src/main_desktop"
+        odin_main_pkg = "main_desktop"
+        out_dir = join(build_dir, build_mode)
         odin_out = join(out_dir, fmt.aprintf("%s_%s_%s", app_name, PLATFORM, build_mode))
         build_options.debug = true
         build_options.optimization = .Minimal
@@ -68,12 +71,18 @@ main :: proc() {
         } 
     }
     if release {
+        odin_main_dir = "src/main_desktop"
+        odin_main_pkg = "main_desktop"
+        out_dir = join(build_dir, "release_" + PLATFORM)
         odin_out = join(out_dir, app_name)
         build_options.disable_assert = true
         build_options.optimization = .Speed
         if WINDOWS { build_options.subsystem = .Windows }
     }
     if web {
+        odin_main_dir = "src/main_web"
+        odin_main_pkg = "main_web"
+        out_dir = join(build_dir, build_mode)
         odin_out = join(out_dir, app_name)
         build_options.disable_assert = true
         build_options.optimization = .Speed
@@ -86,7 +95,6 @@ main :: proc() {
     if asan { build_options.sanitize = .Address }
 
     build_options.vet_packages = { odin_main_pkg }
-    // Default vetting, only omitted with 'novet'
     if !novet {
         build_options.vet_cast = true
         build_options.vet_semicolon = true
@@ -98,7 +106,6 @@ main :: proc() {
         build_options.vet_using_stmt = true
         build_options.vet_when_shadowing = true
     }
-    // Additional vetting with 'vet'
     if vet  {
         build_options.vet_unused_procedures = true
     }

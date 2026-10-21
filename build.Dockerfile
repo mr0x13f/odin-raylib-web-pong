@@ -81,7 +81,7 @@ CMD ["/bin/bash"]
 # -------------------------------------------------------------------
 FROM emscripten-runtime AS odin-build
 
-ARG ODIN_VERSION=dev-2026-03
+ARG ODIN_VERSION=dev-2026-10
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \

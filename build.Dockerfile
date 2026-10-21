@@ -77,7 +77,7 @@ CMD ["/bin/bash"]
 
 
 # -------------------------------------------------------------------
-# Stage 3: Install Odin on top of Emscripten
+# Stage 3: Install Odin
 # -------------------------------------------------------------------
 FROM emscripten-runtime AS odin-build
 

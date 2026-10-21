@@ -2,7 +2,6 @@
 package build
 
 import "core:os"
-import "core:path/filepath"
 import "core:strings"
 import "core:fmt"
 import "lib/odin_builder/builder"
@@ -51,14 +50,14 @@ main :: proc() {
     build_mode := debug ? "debug" : release ? "release" : web ? "web" : ""
     build_name := fmt.aprintf("%s %s", strings.to_pascal_case(PLATFORM), strings.to_pascal_case(build_mode))
     fmt.printfln("[%s build]", build_name)
-    out_dir := filepath.join({ build_dir, build_mode })
+    out_dir := join(build_dir, build_mode)
     
     // Build flags
     odin_out: string
     build_options: Build_Options
 
     if debug {
-        odin_out = filepath.join({ out_dir, fmt.aprintf("%s_%s_%s", app_name, PLATFORM, build_mode) })
+        odin_out = join(out_dir, fmt.aprintf("%s_%s_%s", app_name, PLATFORM, build_mode))
         build_options.debug = true
         build_options.optimization = .Minimal
         if WINDOWS {
@@ -67,7 +66,7 @@ main :: proc() {
         } 
     }
     if release {
-        odin_out = filepath.join({ out_dir, app_name })
+        odin_out = join(out_dir, app_name)
         build_options.disable_assert = true
         build_options.optimization = .Speed
         if WINDOWS { build_options.subsystem = .Windows }

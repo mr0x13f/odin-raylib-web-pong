@@ -17,7 +17,7 @@ if [[ "${1:-}" == "docker" ]]; then
     fi
 
     if ! docker info >/dev/null 2>&1; then
-        echo "[ERROR] Docker is not running or you don't have permission to access it." >&2
+        echo "[ERROR] Docker is not running." >&2
         echo "Start Docker Desktop or the Docker daemon, then try again." >&2
         exit 1
     fi

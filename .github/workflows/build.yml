@@ -22,11 +22,11 @@ jobs:
       - name: Build release
         run: sh build.sh release
       - name: Build web
-        run: sh build.sh web
+        run: sh build.sh web release
       - name: Upload web build artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: build/web
+          path: build/web_releasse
 
   build_macos:
     name: MacOS
@@ -42,7 +42,7 @@ jobs:
       - name: Build release
         run: sh build.sh release
       - name: Build web
-        run: sh build.sh web
+        run: sh build.sh web release
 
   build_windows:
     name: Windows
@@ -59,7 +59,7 @@ jobs:
       - name: Build release
         run: sh build.sh release
       - name: Build web
-        run: sh build.sh web
+        run: sh build.sh web release
 
   deploy:
     name: Deploy GitHub Pages

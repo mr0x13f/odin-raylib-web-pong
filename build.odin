@@ -22,7 +22,7 @@ import "lib/odin_builder/builder"
 args: struct {
     debug:   bool "Debug build mode",
     release: bool "Release build mode",
-    web:     bool "Web build mode",
+    web:     bool "Web target",
     watch:   bool "Watch for changes",
     vet:     bool "Extra vetting",
     novet:   bool "No vetting",
@@ -39,33 +39,34 @@ main :: proc() {
     if help {
         print_usage(&args); exit() }
 
-    if count(debug, release, web) != 1 {
-        error("Wrong number of build modes, expected ONE OF 'debug', 'release', 'web'") }
+    expect_exactly_one_of(debug, release)
 
     // Info
     app_name  := "odin-raylib-web-pong"
     build_dir := "build"
 
     // Prepare Build
-    build_mode := debug ? "debug" : release ? "release" : web ? "web" : ""
-    build_name := fmt.aprintf("%s %s", strings.to_pascal_case(PLATFORM), strings.to_pascal_case(build_mode))
+    build_config := debug ? "debug" : release ? "release" : ""
+    target := web ? "web" : NATIVE_PLATFORM
+    odin_target := Odin_Build_Targets.Native
+    odin_build_mode := Odin_Build_Mode.Executable
+    build_name := fmt.aprintf("%s %s", strings.to_pascal_case(target), strings.to_pascal_case(build_config))
     fmt.printfln("[%s build]", build_name)
+    out_dir := join(build_dir, fmt.aprintf("%s_%s", target, build_config))
     
     // Build flags
-    out_dir: string
     odin_out: string
     odin_main_dir: string
     odin_main_pkg: string
-    build_options: Build_Options
+    build_options: Odin_Build_Options
 
     if debug {
         odin_main_dir = "src/main_desktop"
         odin_main_pkg = "main_desktop"
-        out_dir = join(build_dir, build_mode)
-        odin_out = join(out_dir, fmt.aprintf("%s_%s_%s", app_name, PLATFORM, build_mode))
+        odin_out = join(out_dir, app_name)
         build_options.debug = true
         build_options.optimization = .Minimal
-        if WINDOWS {
+        if target == WINDOWS {
             build_options.subsystem = .Console
             build_options.linker = .Radlink
         } 
@@ -73,23 +74,29 @@ main :: proc() {
     if release {
         odin_main_dir = "src/main_desktop"
         odin_main_pkg = "main_desktop"
-        out_dir = join(build_dir, "release_" + PLATFORM)
         odin_out = join(out_dir, app_name)
         build_options.disable_assert = true
         build_options.optimization = .Speed
-        if WINDOWS { build_options.subsystem = .Windows }
+        if target == WINDOWS {
+            build_options.subsystem = .Windows
+        }
     }
+
     if web {
         odin_main_dir = "src/main_web"
         odin_main_pkg = "main_web"
-        out_dir = join(build_dir, build_mode)
         odin_out = join(out_dir, app_name)
+        odin_target = .Js_Wasm32
+        odin_build_mode = .Object
         build_options.disable_assert = true
         build_options.optimization = .Speed
-        build_options.target = "js_wasm32"
         build_options.define["RAYLIB_WASM_LIB"] = "env.o"
         build_options.define["RAYGUI_WASM_LIB"] = "env.o"
-        // TODO
+        
+        // Check that emcc is available
+        if !call({"where", "emcc"}, silent = true) {
+            error("emcc is not available in PATH. Make sure the Emscripten SDK is installed, and add it to your PATH or run $ source emsdk_env.sh")
+        }
     }
 
     if asan { build_options.sanitize = .Address }
@@ -112,17 +119,48 @@ main :: proc() {
 
     build_options.vet_packages = { odin_main_pkg }
 
+    // Prepare web build
+    emscripten_input_files: []string = {}
+    emscripten_flags: []string = {}
+    html_out: string
+    wasm_obj_path: string
+    html_template := "src/main_web/index_template.html"
+    assets_dir := "assets"
+    if web {
+        os.copy_file(join(out_dir, "odin.js"), join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
+        wasm_obj_path = strings.concatenate({odin_out, get_extension_for_build_mode(.Object, odin_target)}, context.allocator)
+        emscripten_input_files = {
+            wasm_obj_path,
+            join(ODIN_ROOT, "vendor/raylib/wasm/libraylib.web.a"),
+            join(ODIN_ROOT, "vendor/raylib/wasm/libraygui.a")
+        }
+        emscripten_flags = {
+            "-sEXPORTED_RUNTIME_METHODS=['HEAPF32']",
+            "-sUSE_GLFW=3",
+            "-sWARN_ON_UNDEFINED_SYMBOLS=0",
+            "-sASSERTIONS",
+            "--shell-file", html_template,
+            "--preload-file", assets_dir,
+        }
+        html_out = join(out_dir, "index.html")
+    }
+
     // Compile
     for watch_dir(watch, odin_main_dir) {
         
         fmt.printfln("Building %s...", app_name)
-        build_success := build(odin_main_dir, odin_out, .Executable, build_options)
+        success := odin_build(odin_main_dir, odin_out, odin_build_mode, odin_target, build_options)
 
-        if build_success {
+        if web && success {
+            success = call({"emcc", "-o", html_out}, emscripten_input_files, emscripten_flags)
+            if success { os.remove(wasm_obj_path) }
+        }
+
+        if success {
             fmt.printfln(FG_GREEN + "%s build created in " + FG_CYAN + "%s" + os.Path_Separator_String + RESET, build_name, out_dir)
         } else {
             fmt.printfln(FG_RED + "%s build failed" + RESET, build_name)
-            if !watch { exit(-1) }
+            if !watch { exit(1) }
         }
     }
 }

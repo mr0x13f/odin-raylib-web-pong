@@ -9,7 +9,7 @@ This project was meant to try out the feasability of making a graphical applicat
 ## Local setup
 
 ### Requirements
-- **(Optionally) Docker**
+- **(Optional) Docker**
     - https://www.docker.com/products/docker-desktop/
     - May be used to build without needing Odin or the Emscripten SDK
 - **Odin compiler** from January 1st 2025 or newer
@@ -17,7 +17,7 @@ This project was meant to try out the feasability of making a graphical applicat
     - On Windows: Requires MSVC and Windows SDK
 - **(For web builds) Emscripten SDK**
     - https://emscripten.org/docs/getting_started/downloads.html#installation-instructions-using-the-emsdk-recommended
-    - Also `EMSCRIPTEN_SDK_DIR` in `build.bat`
+    - Be sure to add `emsdk\upstream\emscripten` to your `PATH`
 - **(On Windows) Git Bash**
     - `build.bat` uses Git-Bash by default on Windows to run `build.sh` under Bash
     - Git-Bash ships with Git so you should already have it, otherwise install Git
@@ -33,25 +33,24 @@ Because of this, you can follow the rest of this setup guide, but except using `
 ### Building with Docker
 Docker can be used to create builds without needing to install Odin or the Emscripten SDK.
 To build with Docker, run `build.sh` with `docker` as the first argument, for example:
-`build.sh docker release`
+`./build.sh docker release`
 
 The same applies on Windows:
 `build.bat docker release`
 
 ### Desktop builds
 Run `build.sh` followed by build arguments.
-- For debug builds run `build.sh debug`
-- For release builds run `build.sh release`
+- For debug builds run `./build.sh debug`
+- For release builds run `./build.sh release`
 
-For other arguments, run `build.sh help`
+For other arguments, run `./build.sh help`
 
 ### Web build
-1. Point `EMSCRIPTEN_SDK_DIR` in `build.bat` to where you installed emscripten.
-2. Run `build.sh web`.
-3. Web game is in the `build/web` folder.
+1. Run `./build.sh debug web`.
+2. Web game is in the `build/web_debug` folder.
 
 > [!WARNING]
-> You might not be able to open `build/web/index.html` directly due to "CORS policy" javascript errors.
+> You might not be able to open `build/web_debug/index.html` directly due to "CORS policy" javascript errors.
 > You can work around that by running a small server, i.e.:
-> - `npx http-server ./build/web -c-1`
-> - `python -m http.server --directory ./build/web`
+> - `npx http-server ./build/web_debug -c-1`
+> - `python -m http.server --directory ./build/web_debug`

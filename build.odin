@@ -19,6 +19,10 @@ import "lib/odin_builder/builder"
         odin run . -- debug watch novet
 */
 
+// TODO: on docker/inux: implement file watch
+// TODO: on docker/inux: implement delete junk bin file
+// TODO: upgrade emscripten version
+
 args: struct {
     debug:   bool "Debug build mode",
     release: bool "Release build mode",
@@ -53,9 +57,9 @@ main :: proc() {
     build_name := fmt.aprintf("%s %s", strings.to_pascal_case(target), strings.to_pascal_case(build_config))
     fmt.printfln("[%s build]", build_name)
     out_dir := join(build_dir, fmt.aprintf("%s_%s", target, build_config))
+    odin_out := join(out_dir, app_name)
     
     // Build flags
-    odin_out: string
     odin_main_dir: string
     odin_main_pkg: string
     build_options: Odin_Build_Options
@@ -63,7 +67,6 @@ main :: proc() {
     if debug {
         odin_main_dir = "src/main_desktop"
         odin_main_pkg = "main_desktop"
-        odin_out = join(out_dir, app_name)
         build_options.debug = true
         build_options.optimization = .Minimal
         if target == WINDOWS {
@@ -74,7 +77,6 @@ main :: proc() {
     if release {
         odin_main_dir = "src/main_desktop"
         odin_main_pkg = "main_desktop"
-        odin_out = join(out_dir, app_name)
         build_options.disable_assert = true
         build_options.optimization = .Speed
         if target == WINDOWS {
@@ -85,18 +87,12 @@ main :: proc() {
     if web {
         odin_main_dir = "src/main_web"
         odin_main_pkg = "main_web"
-        odin_out = join(out_dir, app_name)
         odin_target = .Js_Wasm32
         odin_build_mode = .Object
         build_options.disable_assert = true
         build_options.optimization = .Speed
         build_options.define["RAYLIB_WASM_LIB"] = "env.o"
         build_options.define["RAYGUI_WASM_LIB"] = "env.o"
-        
-        // Check that emcc is available
-        if !call({"where", "emcc"}, silent = true) {
-            error("emcc is not available in PATH. Make sure the Emscripten SDK is installed, and add it to your PATH or run $ source emsdk_env.sh")
-        }
     }
 
     if asan { build_options.sanitize = .Address }
@@ -126,7 +122,9 @@ main :: proc() {
     wasm_obj_path: string
     html_template := "src/main_web/index_template.html"
     assets_dir := "assets"
+    emcc_command := NATIVE_WINDOWS ? "emcc.bat" : "emcc"
     if web {
+        html_out = join(out_dir, "index.html")
         os.copy_file(join(out_dir, "odin.js"), join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
         wasm_obj_path = strings.concatenate({odin_out, get_extension_for_build_mode(.Object, odin_target)}, context.allocator)
         emscripten_input_files = {
@@ -142,7 +140,11 @@ main :: proc() {
             "--shell-file", html_template,
             "--preload-file", assets_dir,
         }
-        html_out = join(out_dir, "index.html")
+        
+        // Check that emcc is available
+        if !call({"where", emcc_command}, silent = true) {
+            error("emcc is not available in PATH. Make sure the Emscripten SDK is installed, and add it to your PATH or run $ source emsdk_env.sh")
+        }
     }
 
     // Compile
@@ -152,7 +154,7 @@ main :: proc() {
         success := odin_build(odin_main_dir, odin_out, odin_build_mode, odin_target, build_options)
 
         if web && success {
-            success = call({"emcc", "-o", html_out}, emscripten_input_files, emscripten_flags)
+            success = call({"emcc.bat", "-o", html_out}, emscripten_input_files, emscripten_flags)
             if success { os.remove(wasm_obj_path) }
         }
 

@@ -19,9 +19,10 @@ import "lib/odin_builder/builder"
         odin run . -- debug watch novet
 */
 
-// TODO: on docker/inux: implement file watch
-// TODO: on docker/inux: implement delete junk bin file
+// TODO: on docker/linux: implement file watch
+// TODO: on docker/linux: implement delete junk bin file
 // TODO: upgrade emscripten version
+// TODO: does vet also vet src/ or only the main package?
 
 args: struct {
     debug:   bool "Debug build mode",
@@ -46,8 +47,14 @@ main :: proc() {
     expect_exactly_one_of(debug, release)
 
     // Info
-    app_name  := "odin-raylib-web-pong"
-    build_dir := "build"
+    app_name         := "odin-raylib-web-pong"
+    build_dir        := "build"
+    html_template    := "src/main_web/index_template.html"
+    assets_dir       := "assets"
+    desktop_main_dir := "src/main_desktop"
+    desktop_main_pkg := "main_desktop"
+    web_main_dir     := "src/main_web"
+    web_main_pkg     := "main_web"
 
     // Prepare Build
     build_config := debug ? "debug" : release ? "release" : ""
@@ -55,18 +62,17 @@ main :: proc() {
     odin_target := Odin_Build_Targets.Native
     odin_build_mode := Odin_Build_Mode.Executable
     build_name := fmt.aprintf("%s %s", strings.to_pascal_case(target), strings.to_pascal_case(build_config))
-    fmt.printfln("[%s build]", build_name)
     out_dir := join(build_dir, fmt.aprintf("%s_%s", target, build_config))
     odin_out := join(out_dir, app_name)
+    odin_main_dir := web ? web_main_dir : desktop_main_dir
+    odin_main_pkg := web ? web_main_pkg : desktop_main_pkg
+
+    fmt.printfln("[%s build]", build_name)
     
     // Build flags
-    odin_main_dir: string
-    odin_main_pkg: string
     build_options: Odin_Build_Options
 
     if debug {
-        odin_main_dir = "src/main_desktop"
-        odin_main_pkg = "main_desktop"
         build_options.debug = true
         build_options.optimization = .Minimal
         if target == WINDOWS {
@@ -75,8 +81,6 @@ main :: proc() {
         } 
     }
     if release {
-        odin_main_dir = "src/main_desktop"
-        odin_main_pkg = "main_desktop"
         build_options.disable_assert = true
         build_options.optimization = .Speed
         if target == WINDOWS {
@@ -85,12 +89,8 @@ main :: proc() {
     }
 
     if web {
-        odin_main_dir = "src/main_web"
-        odin_main_pkg = "main_web"
         odin_target = .Js_Wasm32
         odin_build_mode = .Object
-        build_options.disable_assert = true
-        build_options.optimization = .Speed
         build_options.define["RAYLIB_WASM_LIB"] = "env.o"
         build_options.define["RAYGUI_WASM_LIB"] = "env.o"
     }
@@ -120,12 +120,10 @@ main :: proc() {
     emscripten_flags: []string = {}
     html_out: string
     wasm_obj_path: string
-    html_template := "src/main_web/index_template.html"
-    assets_dir := "assets"
-    emcc_command := NATIVE_WINDOWS ? "emcc.bat" : "emcc"
+    emcc_cmd: string
     if web {
+        emcc_cmd = NATIVE_WINDOWS ? "emcc.bat" : "emcc"
         html_out = join(out_dir, "index.html")
-        os.copy_file(join(out_dir, "odin.js"), join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
         wasm_obj_path = strings.concatenate({odin_out, get_extension_for_build_mode(.Object, odin_target)}, context.allocator)
         emscripten_input_files = {
             wasm_obj_path,
@@ -142,9 +140,10 @@ main :: proc() {
         }
         
         // Check that emcc is available
-        if !call({"where", emcc_command}, silent = true) {
-            error("emcc is not available in PATH. Make sure the Emscripten SDK is installed, and add it to your PATH or run $ source emsdk_env.sh")
-        }
+        if !call({"where", emcc_cmd}, silent = true) {
+            error("emcc is not available in PATH. Make sure the Emscripten SDK is installed, and add it to your PATH or run $ source emsdk_env.sh") }
+        // Copy odin.js to output
+        os.copy_file(join(out_dir, "odin.js"), join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
     }
 
     // Compile
@@ -154,7 +153,7 @@ main :: proc() {
         success := odin_build(odin_main_dir, odin_out, odin_build_mode, odin_target, build_options)
 
         if web && success {
-            success = call({"emcc.bat", "-o", html_out}, emscripten_input_files, emscripten_flags)
+            success = call({emcc_cmd, "-o", html_out}, emscripten_input_files, emscripten_flags)
             if success { os.remove(wasm_obj_path) }
         }
 

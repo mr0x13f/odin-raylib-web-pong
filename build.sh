@@ -8,6 +8,9 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "$(realpath -- "$0")")" && pwd)"
 cd -- "$SCRIPT_DIR"
 
+# Ensure build/ exists
+mkdir build
+
 if [[ "${1:-}" == "docker" ]]; then
     shift
 

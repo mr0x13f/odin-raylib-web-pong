@@ -157,6 +157,7 @@ main :: proc() {
         if !call({"where", emcc_cmd}, silent = true) {
             error("emcc is not available in PATH. Make sure the Emscripten SDK is installed, and add it to your PATH or run $ source emsdk_env.sh") }
         // Copy odin.js to output
+        mkdir(out_dir)
         os.copy_file(join(out_dir, "odin.js"), join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
     }
 

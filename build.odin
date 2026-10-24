@@ -19,21 +19,20 @@ import "lib/odin_builder/builder"
         odin run . -- debug watch novet
 */
 
-// TODO: on docker/linux: implement file watch
-// TODO: on docker/linux: implement delete junk bin file
-// TODO: upgrade emscripten version
-// TODO: does vet also vet src/ or only the main package?
-
 args: struct {
     debug:   bool "Debug build mode",
     release: bool "Release build mode",
     web:     bool "Web target",
+    run:     bool "Run after building",
     watch:   bool "Watch for changes",
     vet:     bool "Extra vetting",
     novet:   bool "No vetting",
     asan:    bool "Use address sanitizer",
     help:    bool "Show usage",
 }
+
+// TODO: on docker/linux: implement file watch
+// TODO: on docker/linux: implement delete junk bin file
 
 main :: proc() {
     using args, builder
@@ -45,6 +44,8 @@ main :: proc() {
         print_usage(&args); exit() }
 
     expect_exactly_one_of(debug, release)
+    if run && watch { error("Cannot run AND watch") }
+    if run && web   { error("Cannot run web build") }
 
     // Info
     app_name         := "odin-raylib-web-pong"
@@ -97,7 +98,7 @@ main :: proc() {
 
     if asan { build_options.sanitize = .Address }
 
-    build_options.vet_packages = { odin_main_pkg }
+    build_options.vet_packages = { desktop_main_dir, desktop_main_pkg }
     if !novet {
         build_options.vet_cast = true
         build_options.vet_semicolon = true
@@ -113,11 +114,10 @@ main :: proc() {
         build_options.vet_unused_procedures = true
     }
 
-    build_options.vet_packages = { odin_main_pkg }
-
     // Prepare web build
-    emscripten_input_files: []string = {}
-    emscripten_flags: []string = {}
+    emscripten_input_files: []string
+    emscripten_flags: []string
+    emscripten_config_flags: []string
     html_out: string
     wasm_obj_path: string
     emcc_cmd: string
@@ -131,12 +131,27 @@ main :: proc() {
             join(ODIN_ROOT, "vendor/raylib/wasm/libraygui.a")
         }
         emscripten_flags = {
+            "--shell-file", html_template,
+            "--preload-file", assets_dir,
             "-sEXPORTED_RUNTIME_METHODS=['HEAPF32']",
             "-sUSE_GLFW=3",
             "-sWARN_ON_UNDEFINED_SYMBOLS=0",
-            "-sASSERTIONS",
-            "--shell-file", html_template,
-            "--preload-file", assets_dir,
+        }
+        if debug {
+            emscripten_config_flags = {
+                "-O0",
+                "-g3",
+                "-sASSERTIONS=2",
+                "-sSTACK_OVERFLOW_CHECK=2",
+                "-sSAFE_HEAP=1",
+            }
+        }
+        if release {
+            emscripten_config_flags = {
+                "-O3",
+                "-sASSERTIONS=0",
+                "-sSTACK_OVERFLOW_CHECK=0",
+            }
         }
         
         // Check that emcc is available
@@ -150,10 +165,10 @@ main :: proc() {
     for watch_dir(watch, odin_main_dir) {
         
         fmt.printfln("Building %s...", app_name)
-        success := odin_build(odin_main_dir, odin_out, odin_build_mode, odin_target, build_options)
+        out_file, success := odin_build(odin_main_dir, odin_out, odin_build_mode, odin_target, build_options)
 
         if web && success {
-            success = call({emcc_cmd, "-o", html_out}, emscripten_input_files, emscripten_flags)
+            success = call({emcc_cmd, "-o", html_out}, emscripten_input_files, emscripten_flags, emscripten_config_flags)
             if success { os.remove(wasm_obj_path) }
         }
 
@@ -161,7 +176,14 @@ main :: proc() {
             fmt.printfln(FG_GREEN + "%s build created in " + FG_CYAN + "%s" + os.Path_Separator_String + RESET, build_name, out_dir)
         } else {
             fmt.printfln(FG_RED + "%s build failed" + RESET, build_name)
-            if !watch { exit(1) }
         }
+
+        if success && run {
+            fmt.printfln("Running...")
+            fmt.println("================================================================================")
+            call({out_file}, interactive = true)
+        }
+        
+        if !success && !watch { exit(1) }
     }
 }

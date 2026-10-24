@@ -8,7 +8,7 @@ run: bool
 game_init :: proc() {
 	run = true
 	rl.SetConfigFlags({.WINDOW_RESIZABLE, .VSYNC_HINT, .MSAA_4X_HINT})
-	rl.InitWindow(1280, 720, "Odin/Raylib/WASM Pong")
+	rl.InitWindow(1280, 720, "Odin/Raylib/Web Pong")
 
 	pong_init()
 }

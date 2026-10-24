@@ -26,7 +26,7 @@ jobs:
       - name: Upload web build artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: build/web_releasse
+          path: build/web_release
 
   build_macos:
     name: MacOS
@@ -55,11 +55,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Build debug
-        run: build.bat debug
+        run: call build.bat debug
       - name: Build release
-        run: build.bat release
+        run: call build.bat release
       - name: Build web
-        run: build.bat web release
+        run: call build.bat web release
 
   deploy:
     name: Deploy GitHub Pages

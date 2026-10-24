@@ -2,11 +2,11 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Debug Build",
+            "label": "Native Debug Build",
             "type": "shell",
             "windows": { "command": "./build.bat" },
-            "linux":   { "command": "bash build.bat"  },
-            "osx":     { "command": "bash build.bat"  },
+            "linux":   { "command": "./build.sh"  },
+            "osx":     { "command": "./build.sh"  },
             "args": [ "debug" ],
             "presentation": {
                 "clear": true,
@@ -14,11 +14,11 @@
             }
         },
         {
-            "label": "Release Build",
+            "label": "Native Release Build",
             "type": "shell",
             "windows": { "command": "./build.bat" },
-            "linux":   { "command": "bash build.bat"  },
-            "osx":     { "command": "bash build.bat"  },
+            "linux":   { "command": "./build.sh"  },
+            "osx":     { "command": "./build.sh"  },
             "args": [ "release" ],
             "presentation": {
                 "clear": true,
@@ -26,12 +26,24 @@
             }
         },
         {
-            "label": "Web Build",
+            "label": "Web Debug Build",
             "type": "shell",
             "windows": { "command": "./build.bat" },
-            "linux":   { "command": "bash build.bat"  },
-            "osx":     { "command": "bash build.bat"  },
-            "args": [ "web" ],
+            "linux":   { "command": "./build.sh"  },
+            "osx":     { "command": "./build.sh"  },
+            "args": [ "debug", "web" ],
+            "presentation": {
+                "clear": true,
+                "showReuseMessage": false
+            }
+        },
+        {
+            "label": "Web Release Build",
+            "type": "shell",
+            "windows": { "command": "./build.bat" },
+            "linux":   { "command": "./build.sh"  },
+            "osx":     { "command": "./build.sh"  },
+            "args": [ "release", "web" ],
             "presentation": {
                 "clear": true,
                 "showReuseMessage": false

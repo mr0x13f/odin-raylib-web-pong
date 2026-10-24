@@ -32,7 +32,7 @@ logger_proc :: proc(
 	level: log.Level,
 	text: string,
 	options: log.Options,
-	location := #caller_location
+	location := #caller_location,
 ) {
 	b := strings.builder_make(context.temp_allocator)
 	strings.write_string(&b, Level_Headers[level])

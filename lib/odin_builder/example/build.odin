@@ -1,0 +1,120 @@
+#+feature using-stmt
+package build
+
+import "core:os"
+import "core:strings"
+import "core:fmt"
+import "../builder"
+
+/*
+    ===== Usage =====
+        odin run . -- [..args]
+
+    ===== Examples =====
+    Debug build:
+        odin run . -- debug
+    Release build:
+        odin run . -- release
+    Watch-for-changes debug build without vetting:
+        odin run . -- debug watch novet
+*/
+
+args: struct {
+    debug:   bool "Debug build config",
+    release: bool "Release build config",
+    run:     bool "Run after building",
+    watch:   bool "Watch for changes",
+    vet:     bool "Extra vetting",
+    novet:   bool "No vetting",
+    asan:    bool "Use address sanitizer",
+    help:    bool "Show usage",
+}
+
+main :: proc() {
+    using args, builder
+    read_args(&args)
+
+    if len(cli_args) == 0 {
+        print_usage(&args); exit(1) }
+    if help {
+        print_usage(&args); exit() }
+
+    expect_exactly_one_of(debug, release)
+    if run && watch { error("Cannot run AND watch") }
+
+    // Info
+    app_name      := "hellope"
+    odin_main_pkg := "hellope"
+    odin_main_dir := "src"
+    build_dir     := "build"
+
+    // Prepare Build
+    target := NATIVE_PLATFORM
+    odin_target := Odin_Build_Targets.Native
+    build_config := debug ? "debug" : release ? "release" : ""
+    build_name := fmt.aprintf("%s %s", strings.to_pascal_case(target), strings.to_pascal_case(build_config))
+    out_dir := join(build_dir, fmt.aprintf("%s_%s", target, build_config))
+
+    fmt.printfln("[%s build]", build_name)
+    
+    // Build flags
+    odin_out: string
+    build_options: Odin_Build_Options
+
+    if debug {
+        odin_out = join(out_dir, app_name)
+        build_options.debug = true
+        build_options.optimization = .Minimal
+        if target == WINDOWS {
+            build_options.subsystem = .Console
+            build_options.linker = .Radlink
+        } 
+    }
+    if release {
+        odin_out = join(out_dir, app_name)
+        build_options.disable_assert = true
+        build_options.optimization = .Speed
+        if target == WINDOWS {
+            build_options.subsystem = .Windows
+        }
+    }
+
+    if asan { build_options.sanitize = .Address }
+
+    build_options.vet_packages = { odin_main_pkg }
+    if !novet {
+        build_options.vet_cast = true
+        build_options.vet_semicolon = true
+        build_options.vet_shadowing = true
+        build_options.vet_style = true
+        build_options.vet_unused_imports = true
+        build_options.vet_unused_variables = true
+        build_options.vet_using_param = true
+        build_options.vet_using_stmt = true
+        build_options.vet_when_shadowing = true
+    }
+    if vet  {
+        build_options.vet_unused_procedures = true
+    }
+
+    // Compile
+    for watch_dir(watch, odin_main_dir) {
+        
+        fmt.printfln("Building %s...", app_name)
+        out_file, success := odin_build(odin_main_dir, odin_out, .Executable, odin_target, build_options)
+
+        if success {
+            fmt.printfln(FG_GREEN + "%s build created in " + FG_CYAN + "%s" + os.Path_Separator_String + RESET, build_name, out_dir)
+        } else {
+            fmt.printfln(FG_RED + "%s build failed" + RESET, build_name)
+        }
+
+        if success && run {
+            fmt.printfln("Running...")
+            fmt.println("================================================================================")
+            call({out_file}, interactive = true)
+        }
+        
+        if !success && !watch { exit(1) }
+    }
+}

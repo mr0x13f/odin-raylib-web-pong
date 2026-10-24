@@ -12,12 +12,14 @@ This project was meant to try out the feasability of making a graphical applicat
 - **(Optional) Docker**
     - https://www.docker.com/products/docker-desktop/
     - May be used to build without needing Odin or the Emscripten SDK
-- **Odin compiler** from January 1st 2025 or newer
+- **Odin compiler**
     - https://odin-lang.org/docs/install/#official-releases
     - On Windows: Requires MSVC and Windows SDK
+    - Optional if using Docker
 - **(For web builds) Emscripten SDK**
     - https://emscripten.org/docs/getting_started/downloads.html#installation-instructions-using-the-emsdk-recommended
     - Be sure to add `emsdk\upstream\emscripten` to your `PATH`
+    - Optional if using Docker
 - **(On Windows) Git Bash**
     - `build.bat` uses Git-Bash by default on Windows to run `build.sh` under Bash
     - Git-Bash ships with Git so you should already have it, otherwise install Git

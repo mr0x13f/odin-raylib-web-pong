@@ -136,12 +136,12 @@ main :: proc() {
             "-sEXPORTED_RUNTIME_METHODS=['HEAPF32']",
             "-sUSE_GLFW=3",
             "-sWARN_ON_UNDEFINED_SYMBOLS=0",
+            "-sASSERTIONS",
         }
         if debug {
             emscripten_config_flags = {
                 "-O0",
                 "-g3",
-                "-sASSERTIONS=2",
                 "-sSTACK_OVERFLOW_CHECK=2",
                 "-sSAFE_HEAP=1",
             }
@@ -149,7 +149,6 @@ main :: proc() {
         if release {
             emscripten_config_flags = {
                 "-O3",
-                "-sASSERTIONS=0",
                 "-sSTACK_OVERFLOW_CHECK=0",
             }
         }

@@ -652,6 +652,7 @@ pong_start_fourplayer :: proc() {
 pong_serve :: proc(direction: vec2) {
     if pong_state.mode == .None { return }
 
+    // TODO: rng causes alignmend fault on web
     serve_angle := rand.float32_range(-1, 1) * RANDOM_SERVE_ANGLE_DEVIATION
     serve_direction := rotate(direction, serve_angle)
     

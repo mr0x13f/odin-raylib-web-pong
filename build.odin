@@ -57,6 +57,7 @@ main :: proc() {
     web_main_dir     := "src/main_web"
     web_main_pkg     := "main_web"
     wasm_file        := "pong.wasm"
+    web_static_dir   := "web_static"
 
     // Prepare Build
     build_config := debug ? "debug" : release ? "release" : ""
@@ -149,7 +150,7 @@ main :: proc() {
                 "-O0",
                 "-g3",
                 "-sSTACK_OVERFLOW_CHECK=2",
-                "-sSAFE_HEAP=1",
+                "-sSAFE_HEAP=2",
             }
         }
         if release {
@@ -176,9 +177,9 @@ main :: proc() {
         if web && success {
             os.remove(wasm_obj_path)
             move(emscripten_out, join(out_dir, "emscripten.js"))
-            copy(join(out_dir, "odin.js"), join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
-            copy(join(out_dir, "index.js"), "data/index.js")
-            copy(join(out_dir, "index.html"), "data/index.html")
+            copy(join(out_dir, "odin.js"),    join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
+            copy(join(out_dir, "index.js"),   join(web_static_dir, "index.js"))
+            copy(join(out_dir, "index.html"), join(web_static_dir, "index.html"))
         }
 
         if success {

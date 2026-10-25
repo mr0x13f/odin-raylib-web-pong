@@ -116,9 +116,7 @@ main :: proc() {
     }
 
     // Clean
-    if clean {
-        os.remove_all(out_dir)
-    }
+    if clean { os.remove_all(out_dir) }
 
     // Prepare web build
     emscripten_input_files: []string

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en-us">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+	<title>Odin/Raylib/Web Pong</title>
+	<meta name="title" content="Odin/Raylib/Web Pon">
+	<meta name="description" content="Pong in the browser, compiled to WebAssembly with Odin+Raylib">
+	<meta name="viewport" content="width=device-width">
+
+	<style>
+		body { 
+			margin: 0px; 
+			overflow: hidden; 
+			background-color: black;
+		}
+		canvas.game_canvas { 
+			border: 0px none; 
+			background-color: black;
+			padding-left: 0;
+			padding-right: 0;
+			margin-left: auto;
+			margin-right: auto;
+			display: block;
+		}
+	</style>
+</head>
+<body>
+	<canvas class="game_canvas" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1" onmousedown="event.target.focus()" onkeydown="event.preventDefault()"></canvas>
+	<script type="text/javascript" src="odin.js"></script>
+	<script type="text/javascript" src="index.js"></script>
+	<script async type="text/javascript" src="emscripten.js"></script>
+</body>
+</html>

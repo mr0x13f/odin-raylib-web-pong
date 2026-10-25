@@ -24,6 +24,7 @@ args: struct {
     release: bool "Release build mode",
     web:     bool "Web target",
     run:     bool "Run after building",
+    clean:   bool "Delete old build files",
     watch:   bool "Watch for changes",
     vet:     bool "Extra vetting",
     novet:   bool "No vetting",
@@ -112,6 +113,11 @@ main :: proc() {
     }
     if vet  {
         build_options.vet_unused_procedures = true
+    }
+
+    // Clean
+    if clean {
+        os.remove_all(out_dir)
     }
 
     // Prepare web build

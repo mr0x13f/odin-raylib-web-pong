@@ -49,7 +49,7 @@ main :: proc() {
     if run && web   { error("Cannot run web build") }
 
     // Info
-    app_name         := "odin-raylib-web-pong"
+    app_name         := "pong"
     build_dir        := "build"
     assets_dir       := "assets"
     desktop_main_dir := "src/main_desktop"
@@ -116,7 +116,9 @@ main :: proc() {
     }
 
     // Clean
-    if clean { clear_dir(out_dir) }
+    if clean || release {
+        clear_dir(out_dir)
+    }
     mkdir(out_dir)
 
     // Prepare web build
@@ -171,9 +173,9 @@ main :: proc() {
         if web && success {
             success = call({emcc_cmd, "-o", emscripten_out}, emscripten_input_files, emscripten_flags, emscripten_config_flags)
         }
-
         if web && success {
             os.remove(wasm_obj_path)
+            move(emscripten_out, join(out_dir, "emscripten.js"))
             copy(join(out_dir, "odin.js"), join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
             copy(join(out_dir, "index.js"), "data/index.js")
             copy(join(out_dir, "index.html"), "data/index.html")

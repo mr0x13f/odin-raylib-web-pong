@@ -1,3 +1,5 @@
+const WASM_FILE = "pong.wasm";
+
 let odinMemoryInterface = new odin.WasmMemoryInterface();
 odinMemoryInterface.setIntSize(4);
 let odinImports = odin.setupDefaultImports(odinMemoryInterface);
@@ -11,7 +13,7 @@ var Module = {
             ...imports
         }
 
-        return WebAssembly.instantiateStreaming(fetch("index.wasm"), newImports).then(function(output) {
+        return WebAssembly.instantiateStreaming(fetch(WASM_FILE), newImports).then(function(output) {
             let e = output.instance.exports;
             odinMemoryInterface.setExports(e);
             odinMemoryInterface.setMemory(e.memory);

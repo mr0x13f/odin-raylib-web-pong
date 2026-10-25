@@ -51,12 +51,12 @@ main :: proc() {
     // Info
     app_name         := "odin-raylib-web-pong"
     build_dir        := "build"
-    html_template    := "src/main_web/index_template.html"
     assets_dir       := "assets"
     desktop_main_dir := "src/main_desktop"
     desktop_main_pkg := "main_desktop"
     web_main_dir     := "src/main_web"
     web_main_pkg     := "main_web"
+    wasm_file        := "pong.wasm"
 
     // Prepare Build
     build_config := debug ? "debug" : release ? "release" : ""
@@ -116,18 +116,19 @@ main :: proc() {
     }
 
     // Clean
-    if clean { os.remove_all(out_dir) }
+    if clean { clear_dir(out_dir) }
+    mkdir(out_dir)
 
     // Prepare web build
     emscripten_input_files: []string
     emscripten_flags: []string
     emscripten_config_flags: []string
-    html_out: string
+    emscripten_out: string
     wasm_obj_path: string
     emcc_cmd: string
     if web {
         emcc_cmd = NATIVE_WINDOWS ? "emcc.bat" : "emcc"
-        html_out = join(out_dir, "index.html")
+        emscripten_out = join(out_dir, fmt.tprintf("%s.js", app_name))
         wasm_obj_path = strings.concatenate({odin_out, get_extension_for_build_mode(.Object, odin_target)}, context.allocator)
         emscripten_input_files = {
             wasm_obj_path,
@@ -135,7 +136,6 @@ main :: proc() {
             join(ODIN_ROOT, "vendor/raylib/wasm/libraygui.a")
         }
         emscripten_flags = {
-            "--shell-file", html_template,
             "--preload-file", assets_dir,
             "-sEXPORTED_RUNTIME_METHODS=['HEAPF32']",
             "-sUSE_GLFW=3",
@@ -160,9 +160,7 @@ main :: proc() {
         // Check that emcc is available
         if !call({"where", emcc_cmd}, silent = true) {
             error("emcc is not available in PATH. Make sure the Emscripten SDK is installed, and add it to your PATH or run $ source emsdk_env.sh") }
-        // Copy odin.js to output
-        copy(join(out_dir, "odin.js"), join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
-    }
+     }
 
     // Compile
     for watch_dir(watch, odin_main_dir) {
@@ -171,8 +169,14 @@ main :: proc() {
         out_file, success := odin_build(odin_main_dir, odin_out, odin_build_mode, odin_target, build_options)
 
         if web && success {
-            success = call({emcc_cmd, "-o", html_out}, emscripten_input_files, emscripten_flags, emscripten_config_flags)
-            if success { os.remove(wasm_obj_path) }
+            success = call({emcc_cmd, "-o", emscripten_out}, emscripten_input_files, emscripten_flags, emscripten_config_flags)
+        }
+
+        if web && success {
+            os.remove(wasm_obj_path)
+            copy(join(out_dir, "odin.js"), join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
+            copy(join(out_dir, "index.js"), "data/index.js")
+            copy(join(out_dir, "index.html"), "data/index.html")
         }
 
         if success {

@@ -52,12 +52,12 @@ main :: proc() {
     app_name         := "pong"
     build_dir        := "build"
     assets_dir       := "assets"
+    web_static_dir   := "web_static"
     desktop_main_dir := "src/main_desktop"
     desktop_main_pkg := "main_desktop"
     web_main_dir     := "src/main_web"
     web_main_pkg     := "main_web"
     wasm_file        := "pong.wasm"
-    web_static_dir   := "web_static"
 
     // Prepare Build
     build_config := debug ? "debug" : release ? "release" : ""

@@ -1,4 +1,6 @@
-const WASM_FILE = "pong.wasm";
+if (window.WASM_FILE == undefined) {
+    console.error("WASM_FILE not defined")
+}
 
 let odinMemoryInterface = new odin.WasmMemoryInterface();
 odinMemoryInterface.setIntSize(4);
@@ -7,13 +9,14 @@ let odinImports = odin.setupDefaultImports(odinMemoryInterface);
 // The Module is used as configuration for emscripten.
 var Module = {
     // This is called by emscripten when it starts up.
-    instantiateWasm: (imports, successCallback) => {
-        const newImports = {
+    instantiateWasm: (emscriptenImports, successCallback) => {
+        let imports = {
+            // Add custom imports here
             ...odinImports,
-            ...imports
+            ...emscriptenImports,
         }
 
-        return WebAssembly.instantiateStreaming(fetch(WASM_FILE), newImports).then(function(output) {
+        return WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then(function(output) {
             let e = output.instance.exports;
             odinMemoryInterface.setExports(e);
             odinMemoryInterface.setMemory(e.memory);

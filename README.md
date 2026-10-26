@@ -18,7 +18,7 @@ This project was meant to try out the feasability of making a graphical applicat
     - Optional if using Docker
 - **(For web builds) Emscripten SDK**
     - https://emscripten.org/docs/getting_started/downloads.html#installation-instructions-using-the-emsdk-recommended
-    - Be sure to add `emsdk\upstream\emscripten` to your `PATH`
+    - Be sure to add `emsdk/upstream/emscripten` to your `PATH`
     - Optional if using Docker
 - **(On Windows) Git Bash**
     - `build.bat` uses Git-Bash by default on Windows to run `build.sh` under Bash
@@ -30,7 +30,7 @@ On Windows, run `build.bat` followed by build arguments.
 For example: `build.bat release`
 
 The `build.bat` script searches for your local Git Bash installation and uses it to run `build.sh`.
-Because of this, you can follow the rest of this setup guide, but except using `build.bat` instead of `build.sh`.
+Because of this, you can follow the rest of this setup guide, except using `build.bat` instead of `build.sh`.
 
 ### Building with Docker
 Docker can be used to create builds without needing to install Odin or the Emscripten SDK.

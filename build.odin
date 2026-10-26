@@ -132,7 +132,7 @@ main :: proc() {
     if web {
         emcc_cmd = NATIVE_WINDOWS ? "emcc.bat" : "emcc"
         emscripten_out = join(out_dir, fmt.tprintf("%s.js", app_name))
-        wasm_obj_path = strings.concatenate({odin_out, get_extension_for_build_mode(.Object, odin_target)}, context.allocator)
+        wasm_obj_path = append_extension(odin_out, .Object, odin_target, context.allocator)
         emscripten_input_files = {
             wasm_obj_path,
             join(ODIN_ROOT, "vendor/raylib/wasm/libraylib.web.a"),
@@ -161,8 +161,8 @@ main :: proc() {
         }
         
         // Check that emcc is available
-        if !call({"where", emcc_cmd}, silent = true) {
-            error("emcc is not available in PATH. Make sure the Emscripten SDK is installed, and add it to your PATH or run $ source emsdk_env.sh") }
+        call({"where", emcc_cmd}, silent = true) or_else
+            error("emcc is not available in PATH. Make sure the Emscripten SDK is installed, and add it to your PATH or run $ source emsdk_env.sh")
      }
 
     // Compile
@@ -177,7 +177,7 @@ main :: proc() {
         if web && success {
             os.remove(wasm_obj_path)
             move(emscripten_out, join(out_dir, "emscripten.js"))
-            copy(join(out_dir, "odin.js"),    join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
+            copy(join(out_dir, "odin.js"), join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
             copy_dir_contents(out_dir, web_static_dir)
         }
 

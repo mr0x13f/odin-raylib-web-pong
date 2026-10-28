@@ -26,18 +26,17 @@ var Module = {
     // This happens a bit after `instantiateWasm`, when everything is
     // done setting up. At that point we can run code.
     onRuntimeInitialized: () => {
-        let e = wasmExports;
 
         // Calls any procedure marked with @init
-        e._start();
+        Module.__start();
 
         // See src/main_web/main_web.odin for main_start,
         // main_update and main_end.
-        e.main_start();
+        Module._main_start();
 
         function send_resize() {
             let canvas = document.getElementById('canvas');
-            e.web_window_size_changed(canvas.width, canvas.height);
+            Module._web_window_size_changed(canvas.width, canvas.height);
         }
 
         window.addEventListener('resize', function(event) {
@@ -51,11 +50,11 @@ var Module = {
 
         // Runs the "main loop".
         function do_main_update() {
-            if (!e.main_update()) {
-                e.main_end();
+            if (!Module._main_update()) {
+                Module._main_end();
 
                 // Calls procedures marked with @fini
-                e._end();
+                Module.__end();
                 return;
             }
             window.requestAnimationFrame(do_main_update);

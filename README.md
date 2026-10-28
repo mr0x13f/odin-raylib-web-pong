@@ -4,7 +4,12 @@ An implementation of Pong written in Odin using Raylib. Running natively on desk
 
 Based on the [odin-raylib-web](https://github.com/karl-zylinski/odin-raylib-web) project template by Karl Zylinski.
 
-This project was meant to try out the feasability of making a graphical application for the web using WASM with minimal setup. It also tests how usable Odin and Raylib are for a simple game.
+This project had the following goals:
+- Test the feasability of making a graphical application for the web using WASM with minimal setup.
+- See how usable Odin and Raylib are for a simple game.
+- Have an easy to copy template for using my Odin build script utility `odin_builder` to target WASM.
+
+This was achieved with a total download size of under 500kB uncompressed, of which roughly half is the WASM binary.
 
 ## Local setup
 

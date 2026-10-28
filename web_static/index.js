@@ -17,7 +17,7 @@ var Module = {
             ...emscriptenImports,
         }
 
-        return WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then(function(output) {
+        return WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then((output) => {
             exports = output.instance.exports;
             odinMemoryInterface.setExports(exports);
             odinMemoryInterface.setMemory(exports.memory);
@@ -40,7 +40,7 @@ var Module = {
             exports.web_window_size_changed(canvas.width, canvas.height);
         }
 
-        window.addEventListener('resize', function(event) {
+        window.addEventListener('resize', (event) => {
             send_resize();
         }, true);
 

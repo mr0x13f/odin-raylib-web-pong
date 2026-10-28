@@ -3,7 +3,6 @@
 
 package main_web
 
-import "core:log"
 import "base:runtime"
 import "core:c"
 import "core:mem"

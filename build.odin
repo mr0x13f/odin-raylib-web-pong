@@ -140,6 +140,7 @@ main :: proc() {
         emscripten_flags = {
             "--preload-file", assets_dir,
             "-sEXPORTED_RUNTIME_METHODS=['HEAPF32']",
+            "-sWASM_BIGINT",
             "-sUSE_GLFW=3",
             "-sWARN_ON_UNDEFINED_SYMBOLS=0",
         }
@@ -151,11 +152,16 @@ main :: proc() {
             "-sASSERTIONS=1",
         }}
         if release { emscripten_config_flags = {
+            // -O3 and -sASSERTIONS=0 together causes Emscripten to minify import/export names,
+            // which breaks our JS code since we hand over named imports from odin.js and call exports by name.
+            // Adding -lexports.js prevents this minification
             "-O3",
+            "-sASSERTIONS=0",
+            "-lexports.js",
+            // --------------------------------
             "-sSTACK_OVERFLOW_CHECK=0",
-            // "-sASSERTIONS=0",
-            "-sASSERTIONS=1",
-            "--closure", "1",
+            "-sSAFE_HEAP=0",
+            "--closure", "1", // Javascript minification
         }}
         
         // Check that emcc is available

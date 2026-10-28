@@ -5,6 +5,7 @@ if (typeof WASM_FILE === "undefined") {
 let odinMemoryInterface = new odin.WasmMemoryInterface();
 odinMemoryInterface.setIntSize(4);
 let odinImports = odin.setupDefaultImports(odinMemoryInterface);
+let exports;
 
 // The Module is used as configuration for emscripten.
 var Module = {
@@ -17,9 +18,9 @@ var Module = {
         }
 
         return WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then(function(output) {
-            let e = output.instance.exports;
-            odinMemoryInterface.setExports(e);
-            odinMemoryInterface.setMemory(e.memory);
+            exports = output.instance.exports;
+            odinMemoryInterface.setExports(exports);
+            odinMemoryInterface.setMemory(exports.memory);
             return successCallback(output.instance);
         });
     },
@@ -28,15 +29,15 @@ var Module = {
     onRuntimeInitialized: () => {
 
         // Calls any procedure marked with @init
-        Module.__start();
+        exports._start();
 
         // See src/main_web/main_web.odin for main_start,
         // main_update and main_end.
-        Module._main_start();
+        exports.main_start();
 
         function send_resize() {
             let canvas = document.getElementById('canvas');
-            Module._web_window_size_changed(canvas.width, canvas.height);
+            exports.web_window_size_changed(canvas.width, canvas.height);
         }
 
         window.addEventListener('resize', function(event) {
@@ -50,11 +51,11 @@ var Module = {
 
         // Runs the "main loop".
         function do_main_update() {
-            if (!Module._main_update()) {
-                Module._main_end();
+            if (!exports.main_update()) {
+                exports.main_end();
 
                 // Calls procedures marked with @fini
-                Module.__end();
+                exports._end();
                 return;
             }
             window.requestAnimationFrame(do_main_update);

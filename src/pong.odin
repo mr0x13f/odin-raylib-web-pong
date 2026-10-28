@@ -1,5 +1,6 @@
 package game
 
+import "core:fmt"
 import "core:math/linalg/glsl"
 import "core:math"
 import "core:math/rand"
@@ -245,21 +246,25 @@ pong_ui :: proc() {
     y += text_size * 1.3
 
 	if rl.GuiButton({base_text_size, y, 20*base_text_size, text_size+4}, "1 Players")  {
+        fmt.println("singleplayer")
 		pong_start_singleplayer()
 	}
     y += text_size * 1.3
 
 	if rl.GuiButton({base_text_size, y, 20*base_text_size, text_size+4}, "2 Players") {
+        fmt.println("2 player")
 		pong_start_twoplayer()
 	}
     y += text_size * 1.3
 
 	if rl.GuiButton({base_text_size, y, 20*base_text_size, text_size+4}, "4 Players") {
+        fmt.println("4 player")
 		pong_start_fourplayer()
 	}
     y += text_size * 1.3
 
 	if rl.GuiButton({base_text_size, y, 20*base_text_size, text_size+4}, "Add Ball") {
+        fmt.println("add ball")
 		pong_serve({0, 1})
 	}
     y += text_size * 1.3

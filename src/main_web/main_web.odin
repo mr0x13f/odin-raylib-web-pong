@@ -1,5 +1,4 @@
-// These procs are the ones that will be called from `index.html`, which is
-// generated from `index_template.html`.
+// These procs are the ones that will be called from `index.js`
 
 package main_web
 

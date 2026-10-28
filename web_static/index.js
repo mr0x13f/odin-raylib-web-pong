@@ -1,4 +1,4 @@
-if (window.WASM_FILE == undefined) {
+if (typeof WASM_FILE === "undefined") {
     console.error("WASM_FILE not defined")
 }
 

@@ -9,6 +9,7 @@ let exports;
 
 // The Module is used as configuration for emscripten.
 var Module = {
+    canvas: document.getElementById("canvas"),
     // This is called by emscripten when it starts up.
     instantiateWasm: (emscriptenImports, successCallback) => {
         let imports = {
@@ -63,7 +64,4 @@ var Module = {
 
         window.requestAnimationFrame(do_main_update);
     },
-    canvas: (function() {
-        return document.getElementById("canvas");
-    })()
 };

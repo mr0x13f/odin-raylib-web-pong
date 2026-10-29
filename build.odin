@@ -122,36 +122,36 @@ main :: proc() {
     mkdir(out_dir)
 
     // Prepare web build
-    emscripten_input_files: []string
-    emscripten_flags: []string
-    emscripten_config_flags: []string
-    emscripten_out: string
+    emcc_input_files: []string
+    emcc_flags: []string
+    emcc_config_flags: []string
+    emcc_out: string
     wasm_obj_path: string
     emcc_cmd: string
     if web {
         emcc_cmd = NATIVE_WINDOWS ? "emcc.bat" : "emcc"
-        emscripten_out = join(out_dir, fmt.tprintf("%s.js", app_name))
+        emcc_out = join(out_dir, fmt.aprintf("%s.js", app_name))
         wasm_obj_path = append_extension(odin_out, .Object, odin_target)
-        emscripten_input_files = {
+        emcc_input_files = {
             wasm_obj_path,
             join(ODIN_ROOT, "vendor/raylib/wasm/libraylib.web.a"),
             join(ODIN_ROOT, "vendor/raylib/wasm/libraygui.a")
         }
-        emscripten_flags = {
+        emcc_flags = {
             "--preload-file", assets_dir,
             "-sEXPORTED_RUNTIME_METHODS=['HEAPF32']",
             "-sWASM_BIGINT",
             "-sUSE_GLFW=3",
             "-sWARN_ON_UNDEFINED_SYMBOLS=0",
         }
-        if debug { emscripten_config_flags = {
+        if debug { emcc_config_flags = {
             "-O0",
             "-g3",
             "-sSTACK_OVERFLOW_CHECK=2",
             "-sSAFE_HEAP=2",
             "-sASSERTIONS=1",
         }}
-        if release { emscripten_config_flags = {
+        if release { emcc_config_flags = {
             // -O3 and -sASSERTIONS=0 together causes Emscripten to minify import/export names,
             // which breaks our JS code since we hand over named imports from odin.js and call exports by name.
             // Adding -lexports.js prevents this minification
@@ -176,11 +176,11 @@ main :: proc() {
         out_file, success := odin_build(odin_main_dir, odin_out, odin_build_mode, odin_target, build_options)
 
         if web && success {
-            success = call({emcc_cmd, "-o", emscripten_out}, emscripten_input_files, emscripten_flags, emscripten_config_flags)
+            success = call({emcc_cmd, "-o", emcc_out}, emcc_input_files, emcc_flags, emcc_config_flags)
         }
         if web && success {
             os.remove(wasm_obj_path)
-            move(emscripten_out, tjoin(out_dir, "emscripten.js"))
+            move(emcc_out, tjoin(out_dir, "emscripten.js"))
             copy(tjoin(out_dir, "odin.js"), tjoin(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
             copy_dir_contents(out_dir, web_static_dir)
         }

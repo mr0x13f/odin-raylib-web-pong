@@ -180,8 +180,8 @@ main :: proc() {
         }
         if web && success {
             os.remove(wasm_obj_path)
-            move(emscripten_out, join(out_dir, "emscripten.js"))
-            copy(join(out_dir, "odin.js"), join(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
+            move(emscripten_out, tjoin(out_dir, "emscripten.js"))
+            copy(tjoin(out_dir, "odin.js"), tjoin(ODIN_ROOT, "core/sys/wasm/js/odin.js"))
             copy_dir_contents(out_dir, web_static_dir)
         }
 

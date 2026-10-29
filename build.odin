@@ -50,6 +50,7 @@ main :: proc() {
 
     // Info
     app_name         := "pong"
+    src_dir          := "src"
     build_dir        := "build"
     assets_dir       := "assets"
     web_static_dir   := "web_static"
@@ -170,7 +171,7 @@ main :: proc() {
      }
 
     // Compile
-    for watch_dir(watch, odin_main_dir) {
+    for watch_dir(watch, src_dir) {
         
         fmt.printfln("Building %s...", app_name)
         out_file, success := odin_build(odin_main_dir, odin_out, odin_build_mode, odin_target, build_options)

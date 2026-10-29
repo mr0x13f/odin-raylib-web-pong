@@ -37,11 +37,10 @@ var Module = {
         exports.main_start();
 
         function send_resize() {
-            let canvas = document.getElementById('canvas');
-            exports.web_window_size_changed(canvas.width, canvas.height);
+            exports.web_window_size_changed(Module.canvas.width, Module.canvas.height);
         }
 
-        window.addEventListener('resize', (event) => {
+        window.addEventListener("resize", (event) => {
             send_resize();
         }, true);
 

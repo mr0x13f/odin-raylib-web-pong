@@ -131,7 +131,7 @@ main :: proc() {
     if web {
         emcc_cmd = NATIVE_WINDOWS ? "emcc.bat" : "emcc"
         emscripten_out = join(out_dir, fmt.tprintf("%s.js", app_name))
-        wasm_obj_path = append_extension(odin_out, .Object, odin_target, context.allocator)
+        wasm_obj_path = append_extension(odin_out, .Object, odin_target)
         emscripten_input_files = {
             wasm_obj_path,
             join(ODIN_ROOT, "vendor/raylib/wasm/libraylib.web.a"),

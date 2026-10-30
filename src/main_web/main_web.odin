@@ -6,7 +6,7 @@ import "core:log"
 import "base:runtime"
 import "core:c"
 import "core:mem"
-import game ".."
+import game "src:."
 
 @(private="file")
 web_context: runtime.Context

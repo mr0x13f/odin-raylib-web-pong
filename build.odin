@@ -51,6 +51,7 @@ main :: proc() {
     // Info
     app_name         := "pong"
     src_dir          := "src"
+    lib_dir          := "lib"
     build_dir        := "build"
     assets_dir       := "assets"
     web_static_dir   := "web_static"
@@ -75,6 +76,8 @@ main :: proc() {
     
     // Build flags
     build_options: Odin_Build_Options
+    build_options.collections["src"] = src_dir
+    build_options.collections["lib"] = lib_dir
 
     if debug {
         build_options.debug = true

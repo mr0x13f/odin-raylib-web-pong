@@ -3,7 +3,7 @@ package main_desktop
 import "core:log"
 import "core:os"
 import "core:path/filepath"
-import game ".."
+import game "src:."
 
 main :: proc() {
 	if !ODIN_DEBUG {
